@@ -12,7 +12,7 @@ import type {
   JSONSchemaObject,
   JSONSchemaString,
 } from './types';
-import { ActionNode, SchemaNode, actionEmail, actionIsoDateTime, actionMaxLength, actionMaxValue, actionMinLength, actionMinValue, actionMultipleOf, actionRegex, actionUUID, actionUniqueItems, methodPipe, schemaNodeArray, schemaNodeBoolean, schemaNodeLiteral, schemaNodeNull, schemaNodeNumber, schemaNodeObject, schemaNodeOptional, schemaNodeReference, schemaNodeString, schemaNodeUnion } from './schema-nodes';
+import { ActionNode, AnyNode, SchemaNode, actionEmail, actionIsoDateTime, actionMaxLength, actionMaxValue, actionMinLength, actionMinValue, actionMultipleOf, actionRegex, actionUUID, actionUniqueItems, methodPipe, schemaNodeArray, schemaNodeBoolean, schemaNodeLiteral, schemaNodeNull, schemaNodeNumber, schemaNodeObject, schemaNodeOptional, schemaNodeReference, schemaNodeString, schemaNodeUnion } from './schema-nodes';
 
 
 const OpenAPISchema = object({
@@ -200,7 +200,7 @@ class ValibotGenerator {
     }    
   }
 
-  private parseSchema<Schema extends JSONSchema>(schema: Schema, required: boolean): SchemaNode {
+  private parseSchema<Schema extends JSONSchema>(schema: Schema, required: boolean): AnyNode {
     if ('$ref' in schema) {
       const schemaName = schema.$ref.replace('#/components/schemas/', '').replace('#/definitions/', '');
       this.dependsOn[this.__currentSchema!]!.push(appendSchema(capitalize(schemaName)));
@@ -237,7 +237,7 @@ class ValibotGenerator {
     else throw new Error('`allOf`, `anyOf`, `oneOf` and `not` are not yet implemented');
   }
 
-  private parseEnumType(schema: JSONSchemaString | JSONSchemaNumber, required: boolean): SchemaNode {
+  private parseEnumType(schema: JSONSchemaString | JSONSchemaNumber, required: boolean): AnyNode {
     const content = schema.enum!.map((value) => {
       const val = schema.type === 'string'
         ? `'${value}'`
@@ -252,11 +252,11 @@ class ValibotGenerator {
       : schemaNodeOptional({ item: schemaNodeUnion({ content }) });
   }
 
-  private parseStringType(schema: JSONSchemaString, required: boolean): SchemaNode {
-    let value: SchemaNode = schemaNodeString();
+  private parseStringType(schema: JSONSchemaString, required: boolean): AnyNode {
+    let value: AnyNode = schemaNodeString();
 
     const actions: ActionNode[] = [];
-    if (schema.minLength !== undefined) {
+    if ("minLength" in schema && schema.minLength !== undefined) {
       actions.push(actionMinLength(schema.minLength));
     }
     if (schema.maxLength !== undefined) {
@@ -286,8 +286,8 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseNumberType(schema: JSONSchemaNumber, required: boolean): SchemaNode {
-    let value: SchemaNode = schemaNodeNumber();
+  private parseNumberType(schema: JSONSchemaNumber, required: boolean): AnyNode {
+    let value: AnyNode = schemaNodeNumber();
 
     const actions: ActionNode[] = [];
     if (schema.minimum !== undefined) actions.push(actionMinValue(schema.minimum));
@@ -304,8 +304,14 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseArrayType(schema: JSONSchemaArray, required: boolean): SchemaNode {
-    let value: SchemaNode = schemaNodeArray({ kind: this.parseSchema(schema.items, true) });
+  private parseArrayType(schema: JSONSchemaArray, required: boolean): AnyNode {
+    if (!schema.items) {
+      return schemaNodeArray({});
+    }
+    const kind = Array.isArray(schema.items)
+      ? schemaNodeUnion({ content: schema.items.map(item => this.parseSchema(item, true)) })
+      : this.parseSchema(schema.items, true)
+    let value: AnyNode = schemaNodeArray({ kind });
     const actions: ActionNode[] = [];
 
     if (schema.minItems !== undefined) {
@@ -326,23 +332,23 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseBooleanType(schema: JSONSchemaBoolean, required: boolean): SchemaNode {
-    let value: SchemaNode = schemaNodeBoolean();
+  private parseBooleanType(schema: JSONSchemaBoolean, required: boolean): AnyNode {
+    let value: AnyNode = schemaNodeBoolean();
     if (!required) value = schemaNodeOptional({ item: value });
     return value;
   }
   
-  private parseNullType(): SchemaNode {
+  private parseNullType(): AnyNode {
     return schemaNodeNull();
   }
 
-  private parseObjectType(schema: JSONSchemaObject, required = true): SchemaNode {
+  private parseObjectType(schema: JSONSchemaObject, required = true): AnyNode {
     const content = Object.fromEntries(Object.entries(schema.properties ?? {}).map(([key, value]) => {
       const required = schema.required?.includes(key) ?? false;
       return [key, this.parseSchema(value, required)];
     }).filter(Boolean));
     
-    let value: SchemaNode = schemaNodeObject({ content });
+    let value: AnyNode = schemaNodeObject({ content });
     const actions: ActionNode[] = [];
 
     if (actions.length) value = methodPipe(value, actions);
@@ -351,7 +357,7 @@ class ValibotGenerator {
     return value;
   }
 
-  private visitSchemaNode(schema: SchemaNode, depth = 1): string {
+  private visitSchemaNode(schema: AnyNode, depth = 1): string {
     switch (schema.name) {
       case '$ref':
         return schema.ref!;
@@ -435,7 +441,7 @@ class ValibotGenerator {
     }
   }
 
-  private generateSchema(schema: SchemaNode): string {
+  private generateSchema(schema: AnyNode): string {
     return this.visitSchemaNode(schema);
   }
 }

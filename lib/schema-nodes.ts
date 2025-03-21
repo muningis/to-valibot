@@ -1,9 +1,15 @@
-interface MethodNodeBase<Name extends string, Value extends unknown> {
+type ExtractAdditionalProps<T extends { name: string }> = {
+  [K in keyof T as K extends keyof { name: string } ? never : K]: T[K]
+};
+type HasAdditionalProps<T extends { name: string }> = 
+  keyof ExtractAdditionalProps<T> extends never ? false : true;
+
+type MethodNodeBase<Name extends string, Value extends unknown> = {
   name: Name;
   value: Value;
 }
-interface MethodNodePipe extends MethodNodeBase<'pipe', SchemaNode[]> {}
-const methodPipe = (item: SchemaNode, value: SchemaNode[]): MethodNodePipe => ({
+type MethodNodePipe = MethodNodeBase<'pipe', AnyNode[]>
+const methodPipe = (item: AnyNode, value: AnyNode[]): MethodNodePipe => ({
   name: 'pipe',
   value: [item, ...value]
 });
@@ -12,83 +18,87 @@ type MethodNode =
   | MethodNodePipe;
 
 
-type Action<Node extends ActionNode> = Node["value"] extends never
-  ? (message?: string) => Node
-  : (value: Node["value"], message?: string) => Node;
+type Action<Node extends ActionNode> = Node extends { value: infer V }
+  ? (value: V, message?: string) => Node
+  : (message?: string) => Node;
 
-interface ActionNodeBase<Name extends string, Value extends unknown = never> {
-  name: Name;
-  value: Value;
-  message?: string
-  custom?: boolean;
-}
+type ActionNodeBase<Name extends string, Value extends unknown = undefined> = Value extends undefined
+  ? {
+    name: Name;
+    message?: string
+    custom?: boolean;
+  } : {
+    value: Value;
+    name: Name;
+    message?: string
+    custom?: boolean;
+  }
 
-interface ActionNodeMinLength extends ActionNodeBase<'minLength', number> {}
+type ActionNodeMinLength = ActionNodeBase<'minLength', number>
 const actionMinLength: Action<ActionNodeMinLength> = (value, message) => ({
   name: "minLength",
   value,
   message,
 });
 
-interface ActionNodeMaxLength extends ActionNodeBase<'maxLength', number> {}
+type ActionNodeMaxLength = ActionNodeBase<'maxLength', number>
 const actionMaxLength: Action<ActionNodeMaxLength> = (value, message) => ({
   name: "maxLength",
   value,
   message,
 });
 
-interface ActionNodeMinValue extends ActionNodeBase<'minValue', number> {}
+type ActionNodeMinValue = ActionNodeBase<'minValue', number>
 const actionMinValue: Action<ActionNodeMinValue> = (value, message) => ({
   name: "minValue",
   value,
   message,
 });
 
-interface ActionNodeMaxValue extends ActionNodeBase<'maxValue', number> {}
+type ActionNodeMaxValue = ActionNodeBase<'maxValue', number>
 const actionMaxValue: Action<ActionNodeMaxValue> = (value, message) => ({
   name: "maxValue",
   value,
   message,
 });
 
-interface ActionNodeMultipleOf extends ActionNodeBase<'multipleOf', number> {}
+type ActionNodeMultipleOf = ActionNodeBase<'multipleOf', number>
 const actionMultipleOf: Action<ActionNodeMultipleOf> = (value, message) => ({
   name: "multipleOf",
   value,
   message,
 });
 
-interface ActionNodeRegex extends ActionNodeBase<'regex', string> {}
+type ActionNodeRegex = ActionNodeBase<'regex', string>
 const actionRegex: Action<ActionNodeRegex> = (value, message) => ({
   name: "regex",
   value,
   message,
 });
 
-interface ActionNodeUniqueItems extends ActionNodeBase<'uniqueItems'> {}
+type ActionNodeUniqueItems = ActionNodeBase<'uniqueItems'>
 const actionUniqueItems: Action<ActionNodeUniqueItems> = (message) => ({
   name: "uniqueItems",
   message,
 });
 
-interface ActionNodeEmail extends ActionNodeBase<'email'> {}
+type ActionNodeEmail = ActionNodeBase<'email'>
 const actionEmail: Action<ActionNodeEmail> = (message) => ({
   name: "email",
   message,
 });
 
-interface ActionNodeUUID extends ActionNodeBase<'uuid'> {}
+type ActionNodeUUID = ActionNodeBase<'uuid'>
 const actionUUID: Action<ActionNodeUUID> = (message) => ({
   name: "uuid",
   message,
 });
 
-interface ActionNodeIsoDateTime extends ActionNodeBase<'isoDateTime'> {}
+type ActionNodeIsoDateTime = ActionNodeBase<'isoDateTime'>
 const actionIsoDateTime: Action<ActionNodeIsoDateTime> = (message) => ({
   name: "isoDateTime",
   message,
 });
-
 
 type ActionNode = 
   | ActionNodeMinLength
@@ -102,93 +112,88 @@ type ActionNode =
   | ActionNodeRegex
   | ActionNodeUniqueItems;
 
-interface SchemaNodeBase<Name extends string> {
+type SchemaNodeBase<Name extends string> = {
   name: Name;
 }
 
-interface SchemaNodeString extends SchemaNodeBase<'string'> {}
-const schemaNodeString: NodeFactory<SchemaNodeString> = (props) => ({
+type NodeFactory<Node extends SchemaNode> = HasAdditionalProps<Node> extends true
+  ? (props: Omit<Node, "name">) => Node
+  : () => Node;
+
+type SchemaNodeString = SchemaNodeBase<'string'>
+const schemaNodeString: NodeFactory<SchemaNodeString> = () => ({
   name: 'string',
-  ...props
 });
 
-interface SchemaNodeNumber extends SchemaNodeBase<'number'> {}
-const schemaNodeNumber: NodeFactory<SchemaNodeNumber> = (props) => ({
+type SchemaNodeNumber = SchemaNodeBase<'number'>
+const schemaNodeNumber: NodeFactory<SchemaNodeNumber> = () => ({
   name: 'number',
-  ...props
 });
 
-interface SchemaNodeInteger extends SchemaNodeBase<'integer'> {}
-const schemaNodeInteger: NodeFactory<SchemaNodeInteger> = (props) => ({
+type SchemaNodeInteger = SchemaNodeBase<'integer'>
+const schemaNodeInteger: NodeFactory<SchemaNodeInteger> = () => ({
   name: 'integer',
-  ...props
 });
 
-interface SchemaNodeBoolean extends SchemaNodeBase<'boolean'> {}
-const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = (props) => ({
+type SchemaNodeBoolean = SchemaNodeBase<'boolean'>
+const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = () => ({
   name: 'boolean',
-  ...props
 });
 
-interface SchemaNodeObject extends SchemaNodeBase<'object'> {
-  content: Record<string, SchemaNode>;
+type SchemaNodeObject = SchemaNodeBase<'object'> & {
+  content: Record<string, AnyNode>;
 }
 const schemaNodeObject: NodeFactory<SchemaNodeObject> = (props) => ({
   name: 'object',
-  ...props
+  ...props,
 });
 
-interface SchemaNodeArray extends SchemaNodeBase<'array'> {
-  kind?: SchemaNode;
+type SchemaNodeArray = SchemaNodeBase<'array'> & {
+  kind?: AnyNode;
 }
 const schemaNodeArray: NodeFactory<SchemaNodeArray> = (props) => ({
   name: 'array',
-  ...props
+  ...props,
 });
 
-interface SchemaNodeUnion extends SchemaNodeBase<'union'> {
-  content?: any[]
+type SchemaNodeUnion = SchemaNodeBase<'union'> & {
+  content: any[]
 }
 const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
   name: 'union',
-  ...props
+  ...props,
 });
 
-interface SchemaNodeNull extends SchemaNodeBase<'null'> {}
-const schemaNodeNull: NodeFactory<SchemaNodeNull> = (props) => ({
-  name: 'null',
-  ...props
+type SchemaNodeNull = SchemaNodeBase<'null'>
+const schemaNodeNull: NodeFactory<SchemaNodeNull> = () => ({
+  name: 'null'
 });
 
-interface SchemaNodeLiteral extends SchemaNodeBase<'literal'> {
+type SchemaNodeLiteral = SchemaNodeBase<'literal'> & {
   value?: any;
 }
 const schemaNodeLiteral: NodeFactory<SchemaNodeLiteral> = (props) => ({
   name: 'literal',
-  ...props
+  ...props,
 });
 
-interface SchemaNodeOptional extends SchemaNodeBase<'optional'> {
-  item: SchemaNode
+type SchemaNodeOptional = SchemaNodeBase<'optional'> & {
+  item: AnyNode;
 }
 const schemaNodeOptional: NodeFactory<SchemaNodeOptional> = (props) => ({
   name: 'optional',
-  ...props
+  ...props,
 });
 
-interface SchemaNodeReference extends SchemaNodeBase<'$ref'> {
+type SchemaNodeReference = SchemaNodeBase<'$ref'> & {
   ref?: string;
 }
 const schemaNodeReference: NodeFactory<SchemaNodeReference> = (props) => ({
   name: '$ref',
-  ...props
+  ...props,
 })
 
-type NodeFactory<Node extends SchemaNode> = (props?: Omit<Node, "name">) => Node;
-
 type SchemaNode = 
-  | MethodNode
-  | ActionNode
   | SchemaNodeString
   | SchemaNodeNumber
   | SchemaNodeInteger
@@ -201,9 +206,15 @@ type SchemaNode =
   | SchemaNodeLiteral
   | SchemaNodeReference;
 
-export type { SchemaNode, ActionNode }
+type AnyNode = 
+ | SchemaNode
+ | MethodNode
+ | ActionNode;
+
+export type { ActionNode, AnyNode, SchemaNode }
 export {
   methodPipe,
+
   actionMinLength,
   actionMaxLength,
   actionEmail,
@@ -214,10 +225,7 @@ export {
   actionMaxValue,
   actionMinValue,
   actionMultipleOf,
-}
-export {
-  // factoryByType,
-  // actionNodePipe,
+
   schemaNodeString,
   schemaNodeNumber,
   schemaNodeBoolean,
@@ -228,5 +236,5 @@ export {
   schemaNodeOptional,
   schemaNodeNull,
   schemaNodeLiteral,
-  schemaNodeReference
+  schemaNodeReference,
 }
