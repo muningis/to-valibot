@@ -131,7 +131,10 @@ class ValibotGenerator {
       if (node.name === "integer") this.usedImports.add("number");
       else if (node.name === "$ref") { /** skip */ }
       else if (node.name in customRules) {
-        for (const imp of customRules[node.name as CustomRules].imports) this.usedImports.add(imp);
+        this.customRules.add("uniqueItems");
+        for (const imp of customRules[node.name as CustomRules].imports) {
+          this.usedImports.add(imp);
+        }
       } else this.usedImports.add(node.name as any);
 
       switch (node.name) {
@@ -159,6 +162,9 @@ class ValibotGenerator {
         case 'optional':
           if (node.value) visit(node.value, schemaName);
           break;
+        case 'pipe':
+          node.value.forEach(v => visit(v, schemaName));
+          break;
       }
     }
 
@@ -167,12 +173,6 @@ class ValibotGenerator {
     }
 
     const output: string[] = [];
-
-    for (const rule of this.customRules.values()) {
-      for (const imp of customRules[rule].imports) {
-        this.usedImports.add(imp);
-      }
-    }
 
     const imports = [...this.usedImports.values()].sort((a, b) => {
       const aStartsWithUpper = /^[A-Z]/.test(a);
