@@ -1,11 +1,13 @@
-import { CheckItemsAction, array, boolean, checkItems, isoDateTime, literal, maxLength, maxValue, minLength, minValue, multipleOf, number, object, optional, pipe, regex, string, union, uuid } from "valibot";
+import { CheckItemsAction, InferOutput, array, boolean, checkItems, isoDateTime, literal, maxLength, maxValue, minLength, minValue, multipleOf, number, object, optional, pipe, regex, string, union, uuid } from "valibot";
+
 
 const uniqueItems = <Type, Message extends string>(
   message?: Message
 ): CheckItemsAction<Type[], Message | undefined> =>
   checkItems((item, i, arr) => arr.indexOf(item) === i, message);
 
-const SharedComponentSchema = object({
+
+export const SharedComponentSchema = object({
   sharedId: pipe(string(), uuid()),
   category: union([
     literal('Type A'),
@@ -23,7 +25,10 @@ const SharedComponentSchema = object({
   tags: optional(pipe(array(string()), uniqueItems())),
 });
 
-const MainComponent1Schema = object({
+export type SharedComponent = InferOutput<typeof SharedComponentSchema>;
+
+
+export const MainComponent1Schema = object({
   id: pipe(string(), uuid()),
   name: pipe(string(), minLength(3), maxLength(50), regex(/^[A-Za-z0-9\s]+$/)),
   requiredCount: optional(pipe(number(), minValue(1), maxValue(100))),
@@ -34,7 +39,10 @@ const MainComponent1Schema = object({
   createdAt: optional(pipe(string(), isoDateTime())),
 });
 
-const MainComponent2Schema = object({
+export type MainComponent1 = InferOutput<typeof MainComponent1Schema>;
+
+
+export const MainComponent2Schema = object({
   code: pipe(string(), minLength(5), maxLength(10)),
   priority: optional(union([
     literal(1),
@@ -58,8 +66,4 @@ const MainComponent2Schema = object({
   lastUpdated: optional(string()),
 });
 
-export {
-  MainComponent1Schema,
-  MainComponent2Schema,
-  SharedComponentSchema,
-}
+export type MainComponent2 = InferOutput<typeof MainComponent2Schema>;

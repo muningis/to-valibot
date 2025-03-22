@@ -195,6 +195,8 @@ class ValibotGenerator {
       }
     }
 
+    this.usedImports.add("InferOutput");
+
     const { circularReferences, selfReferencing } =
       findAndHandleCircularReferences(this.dependsOn);
 
@@ -254,18 +256,20 @@ class ValibotGenerator {
       else if (!aStartsWithUpper && bStartsWithUpper) return 1;
       else return a.localeCompare(b);
     });
-    output.push(`import { `, imports.join(', '), ' } from "valibot";\n\n');
+    output.push(`import { `, imports.join(', '), ' } from "valibot";\n');
 
     const cr = Array.from(this.customRules.values());
     if (cr.length > 0) {
+      output.push("\n\n");
       output.push(
         cr.map((rule) => customRules[rule].code).join('\n\n'),
-        '\n\n'
+        '\n'
       );
     }
 
     const schemas = topologicalSort(this.schemas, this.dependsOn);
     for (const [schemaName, schemaNode] of schemas) {
+      output.push("\n\n");
       const schemaCode = this.generateSchemaCode(schemaNode);
       if (
         selfReferencing.includes(schemaName) ||
@@ -278,20 +282,16 @@ class ValibotGenerator {
           schemaName in circularReferences
             ? `: GenericSchema<${typeName}>`
             : '';
-        output.push(`type ${typeName} = ${typeDeclaration}`, '\n\n');
+        output.push(`export type ${typeName} = ${typeDeclaration}`, '\n\n');
         output.push(
-          `const ${schemaName}${typeAnnotation} = ${schemaCode};`,
-          '\n\n'
+          `export const ${schemaName}${typeAnnotation} = ${schemaCode};`,
+          '\n'
         );
       } else {
-        output.push(`const ${schemaName} = ${schemaCode};`, '\n\n');
+        output.push(`export const ${schemaName} = ${schemaCode};`, '\n\n');
+        output.push(`export type ${schemaName.replace(/Schema/, '')} = InferOutput<typeof ${schemaName}>;\n`);
       }
     }
-
-    const exports = Object.keys(this.schemas)
-      .sort((a, b) => a.localeCompare(b))
-      .map((e) => `  ${e},\n`);
-    output.push(`export {\n`, exports.join(''), '}');
 
     return output.join('');
   }

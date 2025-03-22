@@ -1,46 +1,63 @@
-import { CheckItemsAction, array, checkItems, isoDateTime, literal, object, optional, pipe, string, union, uuid } from "valibot";
+import { CheckItemsAction, InferOutput, array, checkItems, isoDateTime, literal, object, optional, pipe, string, union, uuid } from "valibot";
+
 
 const uniqueItems = <Type, Message extends string>(
   message?: Message
 ): CheckItemsAction<Type[], Message | undefined> =>
   checkItems((item, i, arr) => arr.indexOf(item) === i, message);
 
-const StatusSchema = union([
+
+export const StatusSchema = union([
   literal('active'),
   literal('inactive'),
   literal('pending'),
   literal('suspended'),
 ]);
 
-const PrioritySchema = union([
+export type Status = InferOutput<typeof StatusSchema>;
+
+
+export const PrioritySchema = union([
   literal('low'),
   literal('medium'),
   literal('high'),
   literal('critical'),
 ]);
 
-const CategorySchema = union([
+export type Priority = InferOutput<typeof PrioritySchema>;
+
+
+export const CategorySchema = union([
   literal('bug'),
   literal('feature'),
   literal('enhancement'),
   literal('documentation'),
 ]);
 
-const SeveritySchema = union([
+export type Category = InferOutput<typeof CategorySchema>;
+
+
+export const SeveritySchema = union([
   literal('trivial'),
   literal('minor'),
   literal('major'),
   literal('critical'),
 ]);
 
-const UserRoleSchema = union([
+export type Severity = InferOutput<typeof SeveritySchema>;
+
+
+export const UserRoleSchema = union([
   literal('admin'),
   literal('manager'),
   literal('developer'),
   literal('viewer'),
 ]);
 
-const PermissionSchema = object({
+export type UserRole = InferOutput<typeof UserRoleSchema>;
+
+
+export const PermissionSchema = object({
   action: union([
     literal('read'),
     literal('write'),
@@ -50,21 +67,30 @@ const PermissionSchema = object({
   resource: string(),
 });
 
-const UserSchema = object({
+export type Permission = InferOutput<typeof PermissionSchema>;
+
+
+export const UserSchema = object({
   id: pipe(string(), uuid()),
   username: string(),
   role: UserRoleSchema,
   permissions: optional(array(PermissionSchema)),
 });
 
-const CommentSchema = object({
+export type User = InferOutput<typeof UserSchema>;
+
+
+export const CommentSchema = object({
   id: pipe(string(), uuid()),
   content: string(),
   author: UserSchema,
   createdAt: pipe(string(), isoDateTime()),
 });
 
-const IssueSchema = object({
+export type Comment = InferOutput<typeof CommentSchema>;
+
+
+export const IssueSchema = object({
   id: pipe(string(), uuid()),
   title: string(),
   description: string(),
@@ -81,7 +107,10 @@ const IssueSchema = object({
   updatedAt: optional(pipe(string(), isoDateTime())),
 });
 
-const ProjectSchema = object({
+export type Issue = InferOutput<typeof IssueSchema>;
+
+
+export const ProjectSchema = object({
   id: pipe(string(), uuid()),
   name: string(),
   description: optional(string()),
@@ -92,21 +121,12 @@ const ProjectSchema = object({
   createdAt: pipe(string(), isoDateTime()),
 });
 
-const ComplexRefsSchema = object({
+export type Project = InferOutput<typeof ProjectSchema>;
+
+
+export const ComplexRefsSchema = object({
   projects: array(ProjectSchema),
   users: optional(array(UserSchema)),
 });
 
-export {
-  CategorySchema,
-  CommentSchema,
-  ComplexRefsSchema,
-  IssueSchema,
-  PermissionSchema,
-  PrioritySchema,
-  ProjectSchema,
-  SeveritySchema,
-  StatusSchema,
-  UserRoleSchema,
-  UserSchema,
-}
+export type ComplexRefs = InferOutput<typeof ComplexRefsSchema>;

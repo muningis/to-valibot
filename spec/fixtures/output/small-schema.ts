@@ -1,6 +1,7 @@
-import { array, boolean, email, isoDateTime, literal, maxLength, maxValue, minLength, minValue, number, object, optional, pipe, string, union, uuid } from "valibot";
+import { InferOutput, array, boolean, email, isoDateTime, literal, maxLength, maxValue, minLength, minValue, number, object, optional, pipe, string, union, uuid } from "valibot";
 
-const UserSchema = object({
+
+export const UserSchema = object({
   id: pipe(string(), uuid()),
   name: pipe(string(), minLength(2), maxLength(100)),
   email: pipe(string(), email()),
@@ -19,13 +20,13 @@ const UserSchema = object({
   metadata: optional(object({})),
 });
 
-const ErrorSchema = object({
+export type User = InferOutput<typeof UserSchema>;
+
+
+export const ErrorSchema = object({
   code: string(),
   message: string(),
   details: optional(object({})),
 });
 
-export {
-  ErrorSchema,
-  UserSchema,
-}
+export type Error = InferOutput<typeof ErrorSchema>;
