@@ -206,7 +206,7 @@ class ValibotGenerator {
       this.dependsOn[this.__currentSchema!]!.push(appendSchema(capitalize(schemaName)));
       return required
         ? schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) })
-        : schemaNodeOptional({ item: schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) }) });
+        : schemaNodeOptional({ value: schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) }) });
     } else if ('type' in schema) {
       switch (schema.type) {
         case 'string':
@@ -248,8 +248,8 @@ class ValibotGenerator {
     })
 
     return required
-      ? schemaNodeUnion({ content })
-      : schemaNodeOptional({ item: schemaNodeUnion({ content }) });
+      ? schemaNodeUnion({ value: content })
+      : schemaNodeOptional({ value: schemaNodeUnion({ value: content }) });
   }
 
   private parseStringType(schema: JSONSchemaString, required: boolean): AnyNode {
@@ -281,7 +281,7 @@ class ValibotGenerator {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ item: value });
+    if (!required) value = schemaNodeOptional({ value: value });
 
     return value;
   }
@@ -299,7 +299,7 @@ class ValibotGenerator {
     if (schema.multipleOf !== undefined) actions.push(actionMultipleOf(schema.multipleOf));
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ item: value });
+    if (!required) value = schemaNodeOptional({ value });
 
     return value;
   }
@@ -309,9 +309,9 @@ class ValibotGenerator {
       return schemaNodeArray({});
     }
     const kind = Array.isArray(schema.items)
-      ? schemaNodeUnion({ content: schema.items.map(item => this.parseSchema(item, true)) })
+      ? schemaNodeUnion({ value: schema.items.map(item => this.parseSchema(item, true)) })
       : this.parseSchema(schema.items, true)
-    let value: AnyNode = schemaNodeArray({ kind });
+    let value: AnyNode = schemaNodeArray({ value: kind });
     const actions: ActionNode[] = [];
 
     if (schema.minItems !== undefined) {
@@ -327,14 +327,14 @@ class ValibotGenerator {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ item: value });
+    if (!required) value = schemaNodeOptional({ value });
 
     return value;
   }
 
   private parseBooleanType(schema: JSONSchemaBoolean, required: boolean): AnyNode {
     let value: AnyNode = schemaNodeBoolean();
-    if (!required) value = schemaNodeOptional({ item: value });
+    if (!required) value = schemaNodeOptional({ value });
     return value;
   }
   
@@ -348,11 +348,11 @@ class ValibotGenerator {
       return [key, this.parseSchema(value, required)];
     }).filter(Boolean));
     
-    let value: AnyNode = schemaNodeObject({ content });
+    let value: AnyNode = schemaNodeObject({ value: content });
     const actions: ActionNode[] = [];
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ item: value });
+    if (!required) value = schemaNodeOptional({ value });
 
     return value;
   }
@@ -363,7 +363,7 @@ class ValibotGenerator {
         return schema.ref!;
       case 'array':
         this.usedImports.add('array');
-        return `array(${this.visitSchemaNode(schema.kind!, depth)})`;
+        return `array(${this.visitSchemaNode(schema.value!, depth)})`;
       case 'boolean':
         this.usedImports.add('boolean');
         return 'boolean()';
@@ -400,16 +400,16 @@ class ValibotGenerator {
         return 'null()';
       case 'object': {
         this.usedImports.add('object');
-        const items = Object.entries(schema.content);
+        const items = Object.entries(schema.value);
         if (items.length === 0) return `object({})`;
 
-        const inner: string = Object.entries(schema.content)
+        const inner: string = Object.entries(schema.value)
           .map(([key, item]) => `${'  '.repeat(depth)}${key}: ${this.visitSchemaNode(item, depth + 1)},\n`).join('')
         return `object({\n${inner}${'  '.repeat(depth-1)}})`;
       }
       case 'optional':
         this.usedImports.add('optional');
-        return `optional(${this.visitSchemaNode(schema.item, depth)})`;
+        return `optional(${this.visitSchemaNode(schema.value, depth)})`;
       case 'pipe': {
         this.usedImports.add('pipe');
         const inner: string = schema.value
@@ -427,7 +427,7 @@ class ValibotGenerator {
       case 'union': {
         this.usedImports.add('union');
         
-        const inner: string = schema.content?.map((item) => `${'  '.repeat(depth)}${this.visitSchemaNode(item, depth + 1)},\n`).join('') ?? '';
+        const inner: string = schema.value?.map((item) => `${'  '.repeat(depth)}${this.visitSchemaNode(item, depth + 1)},\n`).join('') ?? '';
         return `union([\n${inner}${'  '.repeat(depth-1)}])`;
       }
       case 'uniqueItems': {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { ValibotGenerator } from '../lib';
+import { ValibotGenerator } from '../lib/parser-and-generator';
 
 describe('should generate valibot schemas from OpenAPI json declaration file', () => {
   it('should parse small declaration file', async () => {

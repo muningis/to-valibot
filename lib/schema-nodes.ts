@@ -1,8 +1,12 @@
 type ExtractAdditionalProps<T extends { name: string }> = {
   [K in keyof T as K extends keyof { name: string } ? never : K]: T[K]
 };
-type HasAdditionalProps<T extends { name: string }> = 
-  keyof ExtractAdditionalProps<T> extends never ? false : true;
+type  ExtractRequiredKeys<T extends object> = {
+  [K in keyof T]-?: {} extends Pick<T, K> ? never : K
+}[keyof T]
+
+type HasProps<T extends object> = 
+  keyof T extends never ? false : true;
 
 type MethodNodeBase<Name extends string, Value extends unknown> = {
   name: Name;
@@ -26,12 +30,12 @@ type ActionNodeBase<Name extends string, Value extends unknown = undefined> = Va
   ? {
     name: Name;
     message?: string
-    custom?: boolean;
+    custom?: true;
   } : {
     value: Value;
     name: Name;
     message?: string
-    custom?: boolean;
+    custom?: true;
   }
 
 type ActionNodeMinLength = ActionNodeBase<'minLength', number>
@@ -79,6 +83,7 @@ const actionRegex: Action<ActionNodeRegex> = (value, message) => ({
 type ActionNodeUniqueItems = ActionNodeBase<'uniqueItems'>
 const actionUniqueItems: Action<ActionNodeUniqueItems> = (message) => ({
   name: "uniqueItems",
+  custom: true,
   message,
 });
 
@@ -114,34 +119,42 @@ type ActionNode =
 
 type SchemaNodeBase<Name extends string> = {
   name: Name;
+  message?: string;
 }
 
-type NodeFactory<Node extends SchemaNode> = HasAdditionalProps<Node> extends true
-  ? (props: Omit<Node, "name">) => Node
-  : () => Node;
+type NodeFactory<Node extends SchemaNode> =
+  HasProps<ExtractAdditionalProps<Node>> extends true
+    ? ExtractRequiredKeys<ExtractAdditionalProps<Node>> extends never
+      ? (props?: Omit<Node, "name">) => Node
+      : (props: Omit<Node, "name">) => Node
+    : () => Node;
 
 type SchemaNodeString = SchemaNodeBase<'string'>
-const schemaNodeString: NodeFactory<SchemaNodeString> = () => ({
+const schemaNodeString: NodeFactory<SchemaNodeString> = (props) => ({
   name: 'string',
+  ...props
 });
 
 type SchemaNodeNumber = SchemaNodeBase<'number'>
-const schemaNodeNumber: NodeFactory<SchemaNodeNumber> = () => ({
+const schemaNodeNumber: NodeFactory<SchemaNodeNumber> = (props) => ({
   name: 'number',
+  ...props
 });
 
 type SchemaNodeInteger = SchemaNodeBase<'integer'>
-const schemaNodeInteger: NodeFactory<SchemaNodeInteger> = () => ({
+const schemaNodeInteger: NodeFactory<SchemaNodeInteger> = (props) => ({
   name: 'integer',
+  ...props
 });
 
 type SchemaNodeBoolean = SchemaNodeBase<'boolean'>
-const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = () => ({
+const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = (props) => ({
   name: 'boolean',
+  ...props
 });
 
 type SchemaNodeObject = SchemaNodeBase<'object'> & {
-  content: Record<string, AnyNode>;
+  value: Record<string, AnyNode>;
 }
 const schemaNodeObject: NodeFactory<SchemaNodeObject> = (props) => ({
   name: 'object',
@@ -149,7 +162,7 @@ const schemaNodeObject: NodeFactory<SchemaNodeObject> = (props) => ({
 });
 
 type SchemaNodeArray = SchemaNodeBase<'array'> & {
-  kind?: AnyNode;
+  value?: AnyNode;
 }
 const schemaNodeArray: NodeFactory<SchemaNodeArray> = (props) => ({
   name: 'array',
@@ -157,7 +170,7 @@ const schemaNodeArray: NodeFactory<SchemaNodeArray> = (props) => ({
 });
 
 type SchemaNodeUnion = SchemaNodeBase<'union'> & {
-  content: any[]
+  value: any[]
 }
 const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
   name: 'union',
@@ -165,8 +178,9 @@ const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
 });
 
 type SchemaNodeNull = SchemaNodeBase<'null'>
-const schemaNodeNull: NodeFactory<SchemaNodeNull> = () => ({
-  name: 'null'
+const schemaNodeNull: NodeFactory<SchemaNodeNull> = (props) => ({
+  name: 'null',
+  ...props
 });
 
 type SchemaNodeLiteral = SchemaNodeBase<'literal'> & {
@@ -178,7 +192,7 @@ const schemaNodeLiteral: NodeFactory<SchemaNodeLiteral> = (props) => ({
 });
 
 type SchemaNodeOptional = SchemaNodeBase<'optional'> & {
-  item: AnyNode;
+  value: AnyNode;
 }
 const schemaNodeOptional: NodeFactory<SchemaNodeOptional> = (props) => ({
   name: 'optional',

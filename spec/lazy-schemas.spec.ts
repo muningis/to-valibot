@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'bun:test';
-import { ValibotGenerator } from '../lib';
+import { ValibotGenerator } from '../lib/parser-and-generator';
 
 describe('should generate valibot schemas from self referencing and circular schemas', () => {
   it('should parse JSON Schema with circular references', async () => {
