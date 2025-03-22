@@ -18,11 +18,14 @@ const generate = valibotGenerator({
 });
 
 const schemas = []; // Fetch, Import, Read from file system - however you like
-
-for (schema of schemas) {
-  generate({
-    format: 'openapi-yaml',
-    schema,
-  });
-}
+// or
+const schema = ''; // Stringified OpenAPI Declaration or JSON Schema
+// or
+const schema = []; // OpenAPI JSON Declaration or JSON Schema
+generate({
+  format: 'openapi-yaml',
+  schemas,
+  // or
+  schema
+});
 ```

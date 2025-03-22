@@ -49,6 +49,9 @@ import { findAndHandleCircularReferences } from './utils/circular-refs';
 import { topologicalSort } from './utils/topological-sort';
 
 const OpenAPISchema = object({
+  info: object({
+    title: string(),
+  }),
   components: object({
     schemas: record(string(), any()),
   }),
@@ -117,11 +120,16 @@ type AllowedImports = (typeof allowedImports)[number];
 
 class ValibotGenerator {
   private root:
-    | { format: 'json'; value: JSONSchemaSchema }
+    | { format: 'json'; value: JSONSchemaSchema; title: string }
     | {
         format: 'openapi-json' | 'openapi-yaml';
         value: Record<string, JSONSchema>;
+        title: string;
       };
+
+  get title() {
+    return this.root.title;
+  }
 
   private refs: Map<string, string> = new Map();
   private schemas: Record<string, AnyNode> = {};
@@ -134,13 +142,19 @@ class ValibotGenerator {
   constructor(
     content: string,
     format: 'openapi-json' | 'openapi-yaml' | 'json'
-  ) {
+  );
+  constructor(content: object, format: 'openapi-json' | 'json');
+  constructor(content: any, format: 'openapi-json' | 'openapi-yaml' | 'json') {
     switch (format) {
       case 'openapi-json': {
-        const parsed = parse(OpenAPISchema, JSON.parse(content));
+        const parsed = parse(
+          OpenAPISchema,
+          typeof content === 'string' ? JSON.parse(content) : content
+        );
         this.root = {
           value: parsed.components.schemas,
           format,
+          title: parsed.info.title,
         };
         return this;
       }
@@ -149,14 +163,19 @@ class ValibotGenerator {
         this.root = {
           value: parsed.components.schemas,
           format,
+          title: parsed.info.title,
         };
         return this;
       }
       case 'json': {
-        const parsed = parse(JSONSchemaSchema, JSON.parse(content));
+        const parsed = parse(
+          JSONSchemaSchema,
+          typeof content === 'string' ? JSON.parse(content) : content
+        );
         this.root = {
           value: parsed,
           format,
+          title: parsed.title,
         };
         return this;
       }
