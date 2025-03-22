@@ -12,15 +12,6 @@ const PersonSchema: GenericSchema<Person> = object({
   children: optional(array(lazy(() => PersonSchema))),
 });
 
-type Company = {
-  name: string;
-  employees?: Employee[];
-}
-const CompanySchema: GenericSchema<Company> = object({
-  name: string(),
-  employees: optional(array(lazy(() => EmployeeSchema))),
-});
-
 type Employee = {
   name: string;
   company?: Company;
@@ -33,6 +24,16 @@ const EmployeeSchema: GenericSchema<Employee> = object({
   company: optional(lazy(() => CompanySchema)),
   manager: optional(lazy(() => EmployeeSchema)),
   subordinates: optional(array(lazy(() => EmployeeSchema))),
+});
+
+type Company = {
+  name: string;
+  employees?: Employee[];
+}
+
+const CompanySchema: GenericSchema<Company> = object({
+  name: string(),
+  employees: optional(array(lazy(() => EmployeeSchema))),
 });
 
 const CircularRefsSchema = object({

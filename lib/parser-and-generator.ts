@@ -12,7 +12,8 @@ import type {
   JSONSchemaObject,
   JSONSchemaString,
 } from './types';
-import { ActionNode, AnyNode, SchemaNode, actionEmail, actionIsoDateTime, actionMaxLength, actionMaxValue, actionMinLength, actionMinValue, actionMultipleOf, actionRegex, actionUUID, actionUniqueItems, methodPipe, schemaNodeArray, schemaNodeBoolean, schemaNodeLiteral, schemaNodeNull, schemaNodeNumber, schemaNodeObject, schemaNodeOptional, schemaNodeReference, schemaNodeString, schemaNodeUnion } from './schema-nodes';
+import { ActionNode, AnyNode, actionEmail, actionIsoDateTime, actionMaxLength, actionMaxValue, actionMinLength, actionMinValue, actionMultipleOf, actionRegex, actionUUID, actionUniqueItems, methodPipe, schemaNodeArray, schemaNodeBoolean, schemaNodeLiteral, schemaNodeNull, schemaNodeNumber, schemaNodeObject, schemaNodeOptional, schemaNodeReference, schemaNodeString, schemaNodeUnion } from './schema-nodes';
+import { findAndHandleCircularReferences } from './utils/circular-refs';
 
 
 const OpenAPISchema = object({
@@ -44,12 +45,14 @@ type CustomRules = keyof typeof customRules;
 
 const allowedImports = [
   'CheckItemsAction',
+  'GenericSchema',
   'InferOutput',
   'array',
   'boolean',
   'check',
   'checkItems',
   'email',
+  'lazy',
   'literal',
   'maxLength',
   'maxValue',
@@ -73,7 +76,7 @@ class ValibotGenerator {
   private root: { format: 'json'; value: JSONSchemaSchema } | { format: 'openapi-json' | 'openapi-yaml'; value: Record<string, JSONSchema> };
 
   private refs: Map<string, string> = new Map();
-  private schemas: Record<string, string> = {};
+  private schemas: Record<string, AnyNode> = {};
   private dependsOn: Record<string, string[]> = {};
   private usedImports: Set<AllowedImports> = new Set();
   private customRules: Set<CustomRules> = new Set();
@@ -122,6 +125,47 @@ class ValibotGenerator {
       }
     }
 
+    const { circularReferences, selfReferencing } = findAndHandleCircularReferences(this.dependsOn);
+
+    const visit = (node: AnyNode, schemaName: string) => {
+      if (node.name === "integer") this.usedImports.add("number");
+      else if (node.name === "$ref") { /** skip */ }
+      else if (node.name in customRules) {
+        for (const imp of customRules[node.name as CustomRules].imports) this.usedImports.add(imp);
+      } else this.usedImports.add(node.name as any);
+
+      switch (node.name) {
+        case '$ref':
+          if (
+            (selfReferencing.includes(node.ref!) && schemaName === node.ref) ||
+            (circularReferences[schemaName]?.includes(node.ref!))
+          ) {
+            this.usedImports.add('GenericSchema');
+            this.usedImports.add('lazy');
+            node.lazy = true;
+          }
+          break;
+        case 'object':
+          for (const child of Object.values(node.value)) {
+            visit(child, schemaName);
+          }
+          break;
+        case 'union':
+          for (const child of node.value) {
+            visit(child, schemaName);
+          }
+          break;
+        case 'array':
+        case 'optional':
+          if (node.value) visit(node.value, schemaName);
+          break;
+      }
+    }
+
+    for (const [schemaName, schema] of Object.entries(this.schemas)) {
+      visit(schema, schemaName)
+    }
+
     const output: string[] = [];
 
     for (const rule of this.customRules.values()) {
@@ -137,7 +181,7 @@ class ValibotGenerator {
       if (aStartsWithUpper && !bStartsWithUpper) return -1;
       else if (!aStartsWithUpper && bStartsWithUpper) return 1;
       else return a.localeCompare(b);
-    })
+    });
     output.push(`import { `, imports.join(', '), ' } from "valibot";\n\n');
 
     const cr = Array.from(this.customRules.values());
@@ -148,9 +192,21 @@ class ValibotGenerator {
       );
     }
 
+
     const schemas = topologicalSort(this.schemas, this.dependsOn);
-    for (const [schemaDeclaration, schemaCode] of schemas) {
-      output.push(`const ${schemaDeclaration} = ${schemaCode};`, '\n\n');
+    for (const [schemaName, schemaNode] of schemas) {
+      const schemaCode = this.generateSchemaCode(schemaNode);
+      if (selfReferencing.includes(schemaName) || (schemaName in circularReferences)) {
+        const typeName = schemaName.replace(/Schema/, '');
+        const typeDeclaration = this.generateSchemaTypeDeclaration(schemaNode);
+        const typeAnnotation = selfReferencing.includes(schemaName) || (schemaName in circularReferences)
+          ? `: GenericSchema<${typeName}>`
+          : '';
+        output.push(`type ${typeName} = ${typeDeclaration}`, '\n\n');
+        output.push(`const ${schemaName}${typeAnnotation} = ${schemaCode};`, '\n\n');
+      } else {
+        output.push(`const ${schemaName} = ${schemaCode};`, '\n\n');
+      }
     }
 
     const exports = Object.keys(this.schemas)
@@ -168,7 +224,7 @@ class ValibotGenerator {
         this.__currentSchema = name;  
         this.dependsOn[this.__currentSchema] = [];
         this.refs.set(`#/definitions/${key}`, name);
-        this.schemas[name] = this.generateSchema(this.parseSchema(value, true));
+        this.schemas[name] = this.parseSchema(value, true);
       }
     }
 
@@ -177,13 +233,11 @@ class ValibotGenerator {
     this.dependsOn[this.__currentSchema] = [];
     this.refs.set(`#/definitions/${name}`, name);
 
-    this.schemas[name] = this.generateSchema(
-      this.parseObjectType({
+    this.schemas[name] = this.parseObjectType({
       type: 'object',
       properties: values.properties,
       required: values.required
-      })
-    );
+    });
   }
 
   private parseOpenAPI(values: Record<string, JSONSchema>) {
@@ -196,7 +250,7 @@ class ValibotGenerator {
       const name = appendSchema(capitalize(key));
       this.__currentSchema = name;
       this.dependsOn[this.__currentSchema] = [];
-      this.schemas[this.__currentSchema] = this.generateSchema(this.parseSchema(schema, true));
+      this.schemas[this.__currentSchema] = this.parseSchema(schema, true);
     }    
   }
 
@@ -256,7 +310,7 @@ class ValibotGenerator {
     let value: AnyNode = schemaNodeString();
 
     const actions: ActionNode[] = [];
-    if ("minLength" in schema && schema.minLength !== undefined) {
+    if ('minLength' in schema && schema.minLength !== undefined) {
       actions.push(actionMinLength(schema.minLength));
     }
     if (schema.maxLength !== undefined) {
@@ -357,92 +411,134 @@ class ValibotGenerator {
     return value;
   }
 
-  private visitSchemaNode(schema: AnyNode, depth = 1): string {
-    switch (schema.name) {
-      case '$ref':
-        return schema.ref!;
-      case 'array':
-        this.usedImports.add('array');
-        return `array(${this.visitSchemaNode(schema.value!, depth)})`;
+  private generateNodeType(node: AnyNode, depth = 1): string {
+    switch (node.name) {
+      case 'email':
+      case 'uuid':
+      case 'uniqueItems':
+      case 'isoDateTime':
+      case 'multipleOf':
+      case 'maxLength':
+      case 'maxValue':
+      case 'minLength':
+      case 'minValue':
+      case 'regex': {
+        return '';
+      }
+      case 'pipe': {
+        return this.generateNodeType(node.value[0]);
+      }
       case 'boolean':
-        this.usedImports.add('boolean');
+      case 'string':
+      case 'number':
+      case 'null': {
+        return node.name;
+      }
+      case '$ref': {
+        return node.ref!.replace(/Schema/, '');
+      }
+      case 'array': {
+        if (!node.value) return `any[]`;
+        return `${this.generateNodeType(node.value, depth)}[]`;
+      }
+      case 'integer': {
+        return 'number';
+      }
+      case 'literal': {
+        return typeof node.value === 'string' ? `'${node.value}'` : `${node.value}`;
+      }
+      case 'object': {
+        const items = Object.entries(node.value);
+        if (items.length === 0) return `object`;
+
+        const inner: string = items
+          .map(([key, item]) => {
+            return item.name === 'optional'
+              ? `${'  '.repeat(depth)}${key}?: ${this.generateNodeType(item.value, depth + 1)};\n`
+              : `${'  '.repeat(depth)}${key}: ${this.generateNodeType(item, depth + 1)};\n`
+          }).join('')
+        return `{\n${inner}${'  '.repeat(depth-1)}}`
+      }
+      case 'union': {
+        const inner = node.value.map(item => this.generateNodeType(item, depth)).join(' | ');
+        return `(${inner})`;
+      }
+      case 'optional': {
+        throw new Error('Top-level optional is unsupported');
+      }
+    }
+  }
+
+  private generateNodeCode(node: AnyNode, depth = 1): string {
+    switch (node.name) {
+      case '$ref':
+        if (node.lazy) return `lazy(() => ${node.ref})`;
+        return node.ref!;
+      case 'array':
+        return `array(${this.generateNodeCode(node.value!, depth)})`;
+      case 'boolean':
         return 'boolean()';
       case 'email':
-        this.usedImports.add('email');
         return `email()`;
       case 'integer':
       case 'number':
-        this.usedImports.add('number');
         return `number()`;
       case 'isoDateTime':
-        this.usedImports.add('isoDateTime');
         return 'isoDateTime()';
       case 'literal':
-        this.usedImports.add('literal');
-        return `literal(${schema.value})`;
+        return `literal(${node.value})`;
       case 'maxLength':
-        this.usedImports.add('maxLength');
-        return `maxLength(${schema.value})`;
+        return `maxLength(${node.value})`;
       case 'minLength':
-        this.usedImports.add('minLength');
-        return `minLength(${schema.value})`;
+        return `minLength(${node.value})`;
       case 'maxValue':
-        this.usedImports.add('maxValue');
-        return `maxValue(${schema.value})`;
+        return `maxValue(${node.value})`;
       case 'minValue':
-        this.usedImports.add('minValue');
-        return `minValue(${schema.value})`;
+        return `minValue(${node.value})`;
       case 'multipleOf':
-        this.usedImports.add('multipleOf');
-        return `multipleOf(${schema.value})`;
+        return `multipleOf(${node.value})`;
       case 'null':
-        this.usedImports.add('null');
         return 'null()';
       case 'object': {
-        this.usedImports.add('object');
-        const items = Object.entries(schema.value);
+        const items = Object.entries(node.value);
         if (items.length === 0) return `object({})`;
 
-        const inner: string = Object.entries(schema.value)
-          .map(([key, item]) => `${'  '.repeat(depth)}${key}: ${this.visitSchemaNode(item, depth + 1)},\n`).join('')
+        const inner: string = items
+          .map(([key, item]) => `${'  '.repeat(depth)}${key}: ${this.generateNodeCode(item, depth + 1)},\n`).join('')
         return `object({\n${inner}${'  '.repeat(depth-1)}})`;
       }
       case 'optional':
-        this.usedImports.add('optional');
-        return `optional(${this.visitSchemaNode(schema.value, depth)})`;
+        return `optional(${this.generateNodeCode(node.value, depth)})`;
       case 'pipe': {
-        this.usedImports.add('pipe');
-        const inner: string = schema.value
-          .map((item) => this.visitSchemaNode(item, depth)).join(', ')
+        const inner: string = node.value
+          .map((item) => this.generateNodeCode(item, depth)).join(', ')
         return `pipe(${inner})`;
       }
       case 'regex': {
-        this.usedImports.add('regex');
-        return `regex(/${schema.value}/)`;
+        return `regex(/${node.value}/)`;
       }
       case 'string': {
-        this.usedImports.add('string');
         return `string()`;
       }
-      case 'union': {
-        this.usedImports.add('union');
-        
-        const inner: string = schema.value?.map((item) => `${'  '.repeat(depth)}${this.visitSchemaNode(item, depth + 1)},\n`).join('') ?? '';
+      case 'union': {        
+        const inner: string = node.value?.map((item) => `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`).join('') ?? '';
         return `union([\n${inner}${'  '.repeat(depth-1)}])`;
       }
       case 'uniqueItems': {
-        this.customRules.add('uniqueItems');
         return `uniqueItems()`;
       }
       case 'uuid': {
-        this.usedImports.add('uuid');
         return 'uuid()';
       }
     }
   }
 
-  private generateSchema(schema: AnyNode): string {
-    return this.visitSchemaNode(schema);
+  private generateSchemaTypeDeclaration(schema: AnyNode): string {
+    return this.generateNodeType(schema);
+  }
+
+  private generateSchemaCode(schema: AnyNode): string {
+    return this.generateNodeCode(schema);
   }
 }
 

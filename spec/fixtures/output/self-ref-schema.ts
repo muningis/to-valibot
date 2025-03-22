@@ -1,4 +1,4 @@
-import { array, object, pipe, string, uuid, lazy, GenericSchema, optional } from "valibot";
+import { GenericSchema, array, lazy, object, optional, pipe, string, uuid } from "valibot";
 
 type TreeNode = {
   id: string;
@@ -9,7 +9,7 @@ type TreeNode = {
 const TreeNodeSchema: GenericSchema<TreeNode> = object({
   id: pipe(string(), uuid()),
   name: string(),
-  children: optional(array(lazy(() => TreeNodeSchema)))
+  children: optional(array(lazy(() => TreeNodeSchema))),
 });
 
 type LinkedListNode = {
@@ -19,7 +19,7 @@ type LinkedListNode = {
 
 const LinkedListNodeSchema: GenericSchema<LinkedListNode> = object({
   value: string(),
-  next: optional(lazy(() => LinkedListNodeSchema))
+  next: optional(lazy(() => LinkedListNodeSchema)),
 });
 
 const SelfRefSchema = object({
@@ -30,5 +30,5 @@ const SelfRefSchema = object({
 export {
   LinkedListNodeSchema,
   SelfRefSchema,
-  TreeNodeSchema
+  TreeNodeSchema,
 }

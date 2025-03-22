@@ -4,10 +4,10 @@ import { topologicalSort } from './topological-sort';
 describe('#topologicalSort()', () => {
   it('should sort provided objects', () => {
     const res = topologicalSort({
-      lorem: '',
-      baz: '',
-      bar: '',
-      foo: '',
+      lorem: null,
+      baz: null,
+      bar: null,
+      foo: null,
     }, {
       lorem: ['foo'],
       bar: ['lorem'],
@@ -15,10 +15,10 @@ describe('#topologicalSort()', () => {
     });
 
     expect(res).toEqual([
-      ['foo', ''],
-      ['lorem', ''],
-      ['bar', ''],
-      ['baz', ''],
+      ['foo', null],
+      ['lorem', null],
+      ['bar', null],
+      ['baz', null],
     ]);
   });
 });

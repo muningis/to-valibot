@@ -40,68 +40,68 @@ type ActionNodeBase<Name extends string, Value extends unknown = undefined> = Va
 
 type ActionNodeMinLength = ActionNodeBase<'minLength', number>
 const actionMinLength: Action<ActionNodeMinLength> = (value, message) => ({
-  name: "minLength",
+  name: 'minLength',
   value,
   message,
 });
 
 type ActionNodeMaxLength = ActionNodeBase<'maxLength', number>
 const actionMaxLength: Action<ActionNodeMaxLength> = (value, message) => ({
-  name: "maxLength",
+  name: 'maxLength',
   value,
   message,
 });
 
 type ActionNodeMinValue = ActionNodeBase<'minValue', number>
 const actionMinValue: Action<ActionNodeMinValue> = (value, message) => ({
-  name: "minValue",
+  name: 'minValue',
   value,
   message,
 });
 
 type ActionNodeMaxValue = ActionNodeBase<'maxValue', number>
 const actionMaxValue: Action<ActionNodeMaxValue> = (value, message) => ({
-  name: "maxValue",
+  name: 'maxValue',
   value,
   message,
 });
 
 type ActionNodeMultipleOf = ActionNodeBase<'multipleOf', number>
 const actionMultipleOf: Action<ActionNodeMultipleOf> = (value, message) => ({
-  name: "multipleOf",
+  name: 'multipleOf',
   value,
   message,
 });
 
 type ActionNodeRegex = ActionNodeBase<'regex', string>
 const actionRegex: Action<ActionNodeRegex> = (value, message) => ({
-  name: "regex",
+  name: 'regex',
   value,
   message,
 });
 
 type ActionNodeUniqueItems = ActionNodeBase<'uniqueItems'>
 const actionUniqueItems: Action<ActionNodeUniqueItems> = (message) => ({
-  name: "uniqueItems",
+  name: 'uniqueItems',
   custom: true,
   message,
 });
 
 type ActionNodeEmail = ActionNodeBase<'email'>
 const actionEmail: Action<ActionNodeEmail> = (message) => ({
-  name: "email",
+  name: 'email',
   message,
 });
 
 type ActionNodeUUID = ActionNodeBase<'uuid'>
 const actionUUID: Action<ActionNodeUUID> = (message) => ({
-  name: "uuid",
+  name: 'uuid',
   message,
 });
 
 type ActionNodeIsoDateTime = ActionNodeBase<'isoDateTime'>
 const actionIsoDateTime: Action<ActionNodeIsoDateTime> = (message) => ({
-  name: "isoDateTime",
+  name: 'isoDateTime',
   message,
 });
 
@@ -125,8 +125,8 @@ type SchemaNodeBase<Name extends string> = {
 type NodeFactory<Node extends SchemaNode> =
   HasProps<ExtractAdditionalProps<Node>> extends true
     ? ExtractRequiredKeys<ExtractAdditionalProps<Node>> extends never
-      ? (props?: Omit<Node, "name">) => Node
-      : (props: Omit<Node, "name">) => Node
+      ? (props?: Omit<Node, 'name'>) => Node
+      : (props: Omit<Node, 'name'>) => Node
     : () => Node;
 
 type SchemaNodeString = SchemaNodeBase<'string'>
@@ -170,7 +170,7 @@ const schemaNodeArray: NodeFactory<SchemaNodeArray> = (props) => ({
 });
 
 type SchemaNodeUnion = SchemaNodeBase<'union'> & {
-  value: any[]
+  value: AnyNode[]
 }
 const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
   name: 'union',
@@ -201,6 +201,7 @@ const schemaNodeOptional: NodeFactory<SchemaNodeOptional> = (props) => ({
 
 type SchemaNodeReference = SchemaNodeBase<'$ref'> & {
   ref?: string;
+  lazy?: boolean;
 }
 const schemaNodeReference: NodeFactory<SchemaNodeReference> = (props) => ({
   name: '$ref',
