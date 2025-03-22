@@ -1,14 +1,15 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'vitest';
 import { ValibotGenerator } from '../lib/parser-and-generator';
+import { getFileContents } from './utils/get-file-contents';
 
 describe('should generate valibot schemas from self referencing and circular schemas', () => {
   it('should parse JSON Schema with circular references', async () => {
-    const schema = await Bun.file(
+    const schema = await getFileContents(
       'spec/fixtures/input/circular-refs-schema.json'
-    ).text();
-    const noRefsSchemaOutput = await Bun.file(
+    );
+    const noRefsSchemaOutput = await getFileContents(
       'spec/fixtures/output/circular-refs-schema.ts'
-    ).text();
+    );
 
     const parser = new ValibotGenerator(schema, 'json');
     const parsed = parser.generate();
@@ -16,12 +17,12 @@ describe('should generate valibot schemas from self referencing and circular sch
   });
 
   it('should parse self referencing JSON Schema', async () => {
-    const schema = await Bun.file(
+    const schema = await getFileContents(
       'spec/fixtures/input/self-ref-schema.json'
-    ).text();
-    const mediumRefsSchemaOutput = await Bun.file(
+    );
+    const mediumRefsSchemaOutput = await getFileContents(
       'spec/fixtures/output/self-ref-schema.ts'
-    ).text();
+    );
     const parser = new ValibotGenerator(schema, 'json');
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(mediumRefsSchemaOutput.split('\n'));
