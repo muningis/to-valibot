@@ -1,9 +1,41 @@
-import { any, object, record, string, parse, array, InferOutput, optional, check, pipe } from 'valibot';
+import {
+  any,
+  array,
+  check,
+  InferOutput,
+  object,
+  optional,
+  parse,
+  pipe,
+  record,
+  string,
+} from 'valibot';
 import { parse as parseYaml } from 'yaml';
-
-import { appendSchema, capitalize, normalizeTitle } from './utils/basic';
-import { topologicalSort } from './utils/topological-sort';
-
+import {
+  actionEmail,
+  actionIsoDateTime,
+  actionMaxLength,
+  actionMaxValue,
+  actionMinLength,
+  actionMinValue,
+  actionMultipleOf,
+  ActionNode,
+  actionRegex,
+  actionUniqueItems,
+  actionUUID,
+  AnyNode,
+  methodPipe,
+  schemaNodeArray,
+  schemaNodeBoolean,
+  schemaNodeLiteral,
+  schemaNodeNull,
+  schemaNodeNumber,
+  schemaNodeObject,
+  schemaNodeOptional,
+  schemaNodeReference,
+  schemaNodeString,
+  schemaNodeUnion,
+} from './schema-nodes';
 import type {
   JSONSchema,
   JSONSchemaArray,
@@ -12,9 +44,9 @@ import type {
   JSONSchemaObject,
   JSONSchemaString,
 } from './types';
-import { ActionNode, AnyNode, actionEmail, actionIsoDateTime, actionMaxLength, actionMaxValue, actionMinLength, actionMinValue, actionMultipleOf, actionRegex, actionUUID, actionUniqueItems, methodPipe, schemaNodeArray, schemaNodeBoolean, schemaNodeLiteral, schemaNodeNull, schemaNodeNumber, schemaNodeObject, schemaNodeOptional, schemaNodeReference, schemaNodeString, schemaNodeUnion } from './schema-nodes';
+import { appendSchema, capitalize, normalizeTitle } from './utils/basic';
 import { findAndHandleCircularReferences } from './utils/circular-refs';
-
+import { topologicalSort } from './utils/topological-sort';
 
 const OpenAPISchema = object({
   components: object({
@@ -23,12 +55,23 @@ const OpenAPISchema = object({
 });
 
 const JSONSchemaSchema = object({
-  $schema:  string(),
+  $schema: string(),
   title: string(),
   type: string(),
-  definitions: optional(record(string(), pipe(any(), check<JSONSchema>(() => true)))), 
-  properties: pipe(any(), check<Record<string, JSONSchemaObject>>(() => true)),
-  required: optional(array(string()))
+  definitions: optional(
+    record(
+      string(),
+      pipe(
+        any(),
+        check<JSONSchema>(() => true)
+      )
+    )
+  ),
+  properties: pipe(
+    any(),
+    check<Record<string, JSONSchemaObject>>(() => true)
+  ),
+  required: optional(array(string())),
 });
 type JSONSchemaSchema = InferOutput<typeof JSONSchemaSchema>;
 
@@ -68,12 +111,17 @@ const allowedImports = [
   'string',
   'union',
   'uuid',
-  'isoDateTime'
+  'isoDateTime',
 ] as const;
 type AllowedImports = (typeof allowedImports)[number];
 
 class ValibotGenerator {
-  private root: { format: 'json'; value: JSONSchemaSchema } | { format: 'openapi-json' | 'openapi-yaml'; value: Record<string, JSONSchema> };
+  private root:
+    | { format: 'json'; value: JSONSchemaSchema }
+    | {
+        format: 'openapi-json' | 'openapi-yaml';
+        value: Record<string, JSONSchema>;
+      };
 
   private refs: Map<string, string> = new Map();
   private schemas: Record<string, AnyNode> = {};
@@ -83,30 +131,33 @@ class ValibotGenerator {
 
   private __currentSchema: string | null = null;
 
-  constructor(content: string, format: 'openapi-json' | 'openapi-yaml' | 'json') {
+  constructor(
+    content: string,
+    format: 'openapi-json' | 'openapi-yaml' | 'json'
+  ) {
     switch (format) {
       case 'openapi-json': {
         const parsed = parse(OpenAPISchema, JSON.parse(content));
         this.root = {
           value: parsed.components.schemas,
-          format
-        }
+          format,
+        };
         return this;
       }
       case 'openapi-yaml': {
         const parsed = parse(OpenAPISchema, parseYaml(content));
         this.root = {
           value: parsed.components.schemas,
-          format
-        }
+          format,
+        };
         return this;
       }
       case 'json': {
         const parsed = parse(JSONSchemaSchema, JSON.parse(content));
         this.root = {
           value: parsed,
-          format
-        }
+          format,
+        };
         return this;
       }
     }
@@ -125,13 +176,15 @@ class ValibotGenerator {
       }
     }
 
-    const { circularReferences, selfReferencing } = findAndHandleCircularReferences(this.dependsOn);
+    const { circularReferences, selfReferencing } =
+      findAndHandleCircularReferences(this.dependsOn);
 
     const visit = (node: AnyNode, schemaName: string) => {
-      if (node.name === "integer") this.usedImports.add("number");
-      else if (node.name === "$ref") { /** skip */ }
-      else if (node.name in customRules) {
-        this.customRules.add("uniqueItems");
+      if (node.name === 'integer') this.usedImports.add('number');
+      else if (node.name === '$ref') {
+        /** skip */
+      } else if (node.name in customRules) {
+        this.customRules.add('uniqueItems');
         for (const imp of customRules[node.name as CustomRules].imports) {
           this.usedImports.add(imp);
         }
@@ -141,7 +194,7 @@ class ValibotGenerator {
         case '$ref':
           if (
             (selfReferencing.includes(node.ref!) && schemaName === node.ref) ||
-            (circularReferences[schemaName]?.includes(node.ref!))
+            circularReferences[schemaName]?.includes(node.ref!)
           ) {
             this.usedImports.add('GenericSchema');
             this.usedImports.add('lazy');
@@ -163,13 +216,13 @@ class ValibotGenerator {
           if (node.value) visit(node.value, schemaName);
           break;
         case 'pipe':
-          node.value.forEach(v => visit(v, schemaName));
+          node.value.forEach((v) => visit(v, schemaName));
           break;
       }
-    }
+    };
 
     for (const [schemaName, schema] of Object.entries(this.schemas)) {
-      visit(schema, schemaName)
+      visit(schema, schemaName);
     }
 
     const output: string[] = [];
@@ -177,7 +230,7 @@ class ValibotGenerator {
     const imports = [...this.usedImports.values()].sort((a, b) => {
       const aStartsWithUpper = /^[A-Z]/.test(a);
       const bStartsWithUpper = /^[A-Z]/.test(b);
-      
+
       if (aStartsWithUpper && !bStartsWithUpper) return -1;
       else if (!aStartsWithUpper && bStartsWithUpper) return 1;
       else return a.localeCompare(b);
@@ -187,30 +240,37 @@ class ValibotGenerator {
     const cr = Array.from(this.customRules.values());
     if (cr.length > 0) {
       output.push(
-        cr.map(rule => customRules[rule].code).join('\n\n'),
-        '\n\n',
+        cr.map((rule) => customRules[rule].code).join('\n\n'),
+        '\n\n'
       );
     }
-
 
     const schemas = topologicalSort(this.schemas, this.dependsOn);
     for (const [schemaName, schemaNode] of schemas) {
       const schemaCode = this.generateSchemaCode(schemaNode);
-      if (selfReferencing.includes(schemaName) || (schemaName in circularReferences)) {
+      if (
+        selfReferencing.includes(schemaName) ||
+        schemaName in circularReferences
+      ) {
         const typeName = schemaName.replace(/Schema/, '');
         const typeDeclaration = this.generateSchemaTypeDeclaration(schemaNode);
-        const typeAnnotation = selfReferencing.includes(schemaName) || (schemaName in circularReferences)
-          ? `: GenericSchema<${typeName}>`
-          : '';
+        const typeAnnotation =
+          selfReferencing.includes(schemaName) ||
+          schemaName in circularReferences
+            ? `: GenericSchema<${typeName}>`
+            : '';
         output.push(`type ${typeName} = ${typeDeclaration}`, '\n\n');
-        output.push(`const ${schemaName}${typeAnnotation} = ${schemaCode};`, '\n\n');
+        output.push(
+          `const ${schemaName}${typeAnnotation} = ${schemaCode};`,
+          '\n\n'
+        );
       } else {
         output.push(`const ${schemaName} = ${schemaCode};`, '\n\n');
       }
     }
 
     const exports = Object.keys(this.schemas)
-      .sort((a,b) => a.localeCompare(b))
+      .sort((a, b) => a.localeCompare(b))
       .map((e) => `  ${e},\n`);
     output.push(`export {\n`, exports.join(''), '}');
 
@@ -221,7 +281,7 @@ class ValibotGenerator {
     if (values.definitions) {
       for (const [key, value] of Object.entries(values.definitions)) {
         const name = capitalize(appendSchema(key));
-        this.__currentSchema = name;  
+        this.__currentSchema = name;
         this.dependsOn[this.__currentSchema] = [];
         this.refs.set(`#/definitions/${key}`, name);
         this.schemas[name] = this.parseSchema(value, true);
@@ -236,7 +296,7 @@ class ValibotGenerator {
     this.schemas[name] = this.parseObjectType({
       type: 'object',
       properties: values.properties,
-      required: values.required
+      required: values.required,
     });
   }
 
@@ -251,16 +311,27 @@ class ValibotGenerator {
       this.__currentSchema = name;
       this.dependsOn[this.__currentSchema] = [];
       this.schemas[this.__currentSchema] = this.parseSchema(schema, true);
-    }    
+    }
   }
 
-  private parseSchema<Schema extends JSONSchema>(schema: Schema, required: boolean): AnyNode {
+  private parseSchema<Schema extends JSONSchema>(
+    schema: Schema,
+    required: boolean
+  ): AnyNode {
     if ('$ref' in schema) {
-      const schemaName = schema.$ref.replace('#/components/schemas/', '').replace('#/definitions/', '');
-      this.dependsOn[this.__currentSchema!]!.push(appendSchema(capitalize(schemaName)));
+      const schemaName = schema.$ref
+        .replace('#/components/schemas/', '')
+        .replace('#/definitions/', '');
+      this.dependsOn[this.__currentSchema!]!.push(
+        appendSchema(capitalize(schemaName))
+      );
       return required
         ? schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) })
-        : schemaNodeOptional({ value: schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) }) });
+        : schemaNodeOptional({
+            value: schemaNodeReference({
+              ref: capitalize(appendSchema(schemaName)),
+            }),
+          });
     } else if ('type' in schema) {
       switch (schema.type) {
         case 'string':
@@ -287,26 +358,35 @@ class ValibotGenerator {
         default:
           throw new Error(`Unsupported type: ${(schema as any).type}`);
       }
-    }
-    else throw new Error('`allOf`, `anyOf`, `oneOf` and `not` are not yet implemented');
+    } else
+      throw new Error(
+        '`allOf`, `anyOf`, `oneOf` and `not` are not yet implemented'
+      );
   }
 
-  private parseEnumType(schema: JSONSchemaString | JSONSchemaNumber, required: boolean): AnyNode {
+  private parseEnumType(
+    schema: JSONSchemaString | JSONSchemaNumber,
+    required: boolean
+  ): AnyNode {
     const content = schema.enum!.map((value) => {
-      const val = schema.type === 'string'
-        ? `'${value}'`
-        : schema.type === 'number' || schema.type === 'integer'
-        ? value
-        : null;
+      const val =
+        schema.type === 'string'
+          ? `'${value}'`
+          : schema.type === 'number' || schema.type === 'integer'
+            ? value
+            : null;
       return schemaNodeLiteral({ value: val });
-    })
+    });
 
     return required
       ? schemaNodeUnion({ value: content })
       : schemaNodeOptional({ value: schemaNodeUnion({ value: content }) });
   }
 
-  private parseStringType(schema: JSONSchemaString, required: boolean): AnyNode {
+  private parseStringType(
+    schema: JSONSchemaString,
+    required: boolean
+  ): AnyNode {
     let value: AnyNode = schemaNodeString();
 
     const actions: ActionNode[] = [];
@@ -340,17 +420,24 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseNumberType(schema: JSONSchemaNumber, required: boolean): AnyNode {
+  private parseNumberType(
+    schema: JSONSchemaNumber,
+    required: boolean
+  ): AnyNode {
     let value: AnyNode = schemaNodeNumber();
 
     const actions: ActionNode[] = [];
-    if (schema.minimum !== undefined) actions.push(actionMinValue(schema.minimum));
-    else if (schema.exclusiveMinimum !== undefined) actions.push(actionMinValue(schema.exclusiveMinimum + 1));
-    if (schema.maximum !== undefined) actions.push(actionMaxValue(schema.maximum));
-    else if (schema.exclusiveMaximum !== undefined) actions.push(actionMaxValue(schema.exclusiveMaximum - 1));
-    
+    if (schema.minimum !== undefined)
+      actions.push(actionMinValue(schema.minimum));
+    else if (schema.exclusiveMinimum !== undefined)
+      actions.push(actionMinValue(schema.exclusiveMinimum + 1));
+    if (schema.maximum !== undefined)
+      actions.push(actionMaxValue(schema.maximum));
+    else if (schema.exclusiveMaximum !== undefined)
+      actions.push(actionMaxValue(schema.exclusiveMaximum - 1));
 
-    if (schema.multipleOf !== undefined) actions.push(actionMultipleOf(schema.multipleOf));
+    if (schema.multipleOf !== undefined)
+      actions.push(actionMultipleOf(schema.multipleOf));
 
     if (actions.length) value = methodPipe(value, actions);
     if (!required) value = schemaNodeOptional({ value });
@@ -363,8 +450,10 @@ class ValibotGenerator {
       return schemaNodeArray({});
     }
     const kind = Array.isArray(schema.items)
-      ? schemaNodeUnion({ value: schema.items.map(item => this.parseSchema(item, true)) })
-      : this.parseSchema(schema.items, true)
+      ? schemaNodeUnion({
+          value: schema.items.map((item) => this.parseSchema(item, true)),
+        })
+      : this.parseSchema(schema.items, true);
     let value: AnyNode = schemaNodeArray({ value: kind });
     const actions: ActionNode[] = [];
 
@@ -386,22 +475,29 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseBooleanType(schema: JSONSchemaBoolean, required: boolean): AnyNode {
+  private parseBooleanType(
+    schema: JSONSchemaBoolean,
+    required: boolean
+  ): AnyNode {
     let value: AnyNode = schemaNodeBoolean();
     if (!required) value = schemaNodeOptional({ value });
     return value;
   }
-  
+
   private parseNullType(): AnyNode {
     return schemaNodeNull();
   }
 
   private parseObjectType(schema: JSONSchemaObject, required = true): AnyNode {
-    const content = Object.fromEntries(Object.entries(schema.properties ?? {}).map(([key, value]) => {
-      const required = schema.required?.includes(key) ?? false;
-      return [key, this.parseSchema(value, required)];
-    }).filter(Boolean));
-    
+    const content = Object.fromEntries(
+      Object.entries(schema.properties ?? {})
+        .map(([key, value]) => {
+          const required = schema.required?.includes(key) ?? false;
+          return [key, this.parseSchema(value, required)];
+        })
+        .filter(Boolean)
+    );
+
     let value: AnyNode = schemaNodeObject({ value: content });
     const actions: ActionNode[] = [];
 
@@ -445,7 +541,9 @@ class ValibotGenerator {
         return 'number';
       }
       case 'literal': {
-        return typeof node.value === 'string' ? `'${node.value}'` : `${node.value}`;
+        return typeof node.value === 'string'
+          ? `'${node.value}'`
+          : `${node.value}`;
       }
       case 'object': {
         const items = Object.entries(node.value);
@@ -455,12 +553,15 @@ class ValibotGenerator {
           .map(([key, item]) => {
             return item.name === 'optional'
               ? `${'  '.repeat(depth)}${key}?: ${this.generateNodeType(item.value, depth + 1)};\n`
-              : `${'  '.repeat(depth)}${key}: ${this.generateNodeType(item, depth + 1)};\n`
-          }).join('')
-        return `{\n${inner}${'  '.repeat(depth-1)}}`
+              : `${'  '.repeat(depth)}${key}: ${this.generateNodeType(item, depth + 1)};\n`;
+          })
+          .join('');
+        return `{\n${inner}${'  '.repeat(depth - 1)}}`;
       }
       case 'union': {
-        const inner = node.value.map(item => this.generateNodeType(item, depth)).join(' | ');
+        const inner = node.value
+          .map((item) => this.generateNodeType(item, depth))
+          .join(' | ');
         return `(${inner})`;
       }
       case 'optional': {
@@ -504,14 +605,19 @@ class ValibotGenerator {
         if (items.length === 0) return `object({})`;
 
         const inner: string = items
-          .map(([key, item]) => `${'  '.repeat(depth)}${key}: ${this.generateNodeCode(item, depth + 1)},\n`).join('')
-        return `object({\n${inner}${'  '.repeat(depth-1)}})`;
+          .map(
+            ([key, item]) =>
+              `${'  '.repeat(depth)}${key}: ${this.generateNodeCode(item, depth + 1)},\n`
+          )
+          .join('');
+        return `object({\n${inner}${'  '.repeat(depth - 1)}})`;
       }
       case 'optional':
         return `optional(${this.generateNodeCode(node.value, depth)})`;
       case 'pipe': {
         const inner: string = node.value
-          .map((item) => this.generateNodeCode(item, depth)).join(', ')
+          .map((item) => this.generateNodeCode(item, depth))
+          .join(', ');
         return `pipe(${inner})`;
       }
       case 'regex': {
@@ -520,9 +626,15 @@ class ValibotGenerator {
       case 'string': {
         return `string()`;
       }
-      case 'union': {        
-        const inner: string = node.value?.map((item) => `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`).join('') ?? '';
-        return `union([\n${inner}${'  '.repeat(depth-1)}])`;
+      case 'union': {
+        const inner: string =
+          node.value
+            ?.map(
+              (item) =>
+                `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
+            )
+            .join('') ?? '';
+        return `union([\n${inner}${'  '.repeat(depth - 1)}])`;
       }
       case 'uniqueItems': {
         return `uniqueItems()`;
@@ -542,4 +654,4 @@ class ValibotGenerator {
   }
 }
 
-export { ValibotGenerator }
+export { ValibotGenerator };

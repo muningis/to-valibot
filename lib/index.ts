@@ -1,1 +1,1 @@
-export { ValibotGenerator } from "./parser-and-generator";
+export { ValibotGenerator } from './parser-and-generator';

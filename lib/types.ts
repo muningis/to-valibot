@@ -21,7 +21,7 @@ interface JSONSchemaString extends JSONSchemaBase {
   format?: string;
   contentMediaType?: string;
   contentEncoding?: string;
-  enum?: string[]
+  enum?: string[];
 }
 
 interface JSONSchemaNumber extends JSONSchemaBase {
@@ -94,4 +94,4 @@ export type {
   JSONSchemaObject,
   JSONSchemaCombined,
   JSONSchemaRef,
-}
+};

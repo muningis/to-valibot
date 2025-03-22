@@ -1,32 +1,32 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { findAndHandleCircularReferences } from './circular-refs';
 
 describe('#findAndHandleCircularReferences()', () => {
   it('should find self-referencing schemas', () => {
     const output = findAndHandleCircularReferences({
-      TreeNodeSchema: [ 'TreeNodeSchema' ],
-      LinkedListNodeSchema: [ 'LinkedListNodeSchema' ],
-      SelfRefSchema: [ 'TreeNodeSchema', 'LinkedListNodeSchema' ],
+      TreeNodeSchema: ['TreeNodeSchema'],
+      LinkedListNodeSchema: ['LinkedListNodeSchema'],
+      SelfRefSchema: ['TreeNodeSchema', 'LinkedListNodeSchema'],
     });
     expect(output).toEqual({
-      selfReferencing: [ 'TreeNodeSchema', 'LinkedListNodeSchema' ],
+      selfReferencing: ['TreeNodeSchema', 'LinkedListNodeSchema'],
       circularReferences: {},
-    })
+    });
   });
 
   it('should find circular referencing schemas', () => {
     const output = findAndHandleCircularReferences({
-      PersonSchema: [ 'PersonSchema' ],
-      CompanySchema: [ 'EmployeeSchema' ],
-      EmployeeSchema: [ 'CompanySchema', 'EmployeeSchema' ],
-      CircularRefsSchema: [ 'PersonSchema', 'CompanySchema' ],
+      PersonSchema: ['PersonSchema'],
+      CompanySchema: ['EmployeeSchema'],
+      EmployeeSchema: ['CompanySchema', 'EmployeeSchema'],
+      CircularRefsSchema: ['PersonSchema', 'CompanySchema'],
     });
     expect(output).toEqual({
-      selfReferencing: [ 'PersonSchema', 'EmployeeSchema' ],
+      selfReferencing: ['PersonSchema', 'EmployeeSchema'],
       circularReferences: {
         EmployeeSchema: ['CompanySchema'],
-        CompanySchema: ['EmployeeSchema']
+        CompanySchema: ['EmployeeSchema'],
       },
-    })
+    });
   });
 });
