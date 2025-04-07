@@ -17,7 +17,7 @@ jobs:
         uses: ./.github/actions/environment
 
   preview:
-    name: Publish library via pkg.pr.new
+    name: Publish via pkg.pr.new
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -25,11 +25,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/environment
-      - name: Publish library
+      - name: Publish
         run: pnpx pkg-pr-new publish --compact --comment=update --pnpm
 
   prettier:
-    name: Run Prettier in library
+    name: Run Prettier in
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +41,7 @@ jobs:
         run: pnpm format.check
 
   eslint:
-    name: Run ESLint in library
+    name: Run ESLint in
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -53,7 +53,7 @@ jobs:
         run: pnpm lint
 
   vitest:
-    name: Run Vitest in library
+    name: Run Vitest in
     needs: install
     runs-on: ubuntu-latest
     steps:
