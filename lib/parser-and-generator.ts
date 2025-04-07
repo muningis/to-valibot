@@ -92,43 +92,8 @@ const JSONSchemaSchema = object({
 });
 type JSONSchemaSchema = InferOutput<typeof JSONSchemaSchema>;
 
-const customRules = ['uniqueItems', 'minEntries', 'maxEntries'] as const;
+const customRules = ['uniqueItems', 'minEntries', 'maxEntries', 'not'] as const;
 type CustomRules = (typeof customRules)[number];
-
-type AllowedImports =
-  | 'CheckAction'
-  | 'CheckItemsAction'
-  | 'GenericSchema'
-  | 'InferOutput'
-  | 'array'
-  | 'boolean'
-  | 'check'
-  | 'checkItems'
-  | 'email'
-  | 'integer'
-  | 'lazy'
-  | 'literal'
-  | 'maxLength'
-  | 'maxValue'
-  | 'minLength'
-  | 'minValue'
-  | 'multipleOf'
-  | 'null'
-  | 'number'
-  | 'object'
-  | 'optional'
-  | 'pipe'
-  | 'regex'
-  | 'string'
-  | 'strictObject'
-  | 'union'
-  | 'uuid'
-  | 'isoDateTime'
-  | 'isoDate'
-  | 'isoTime'
-  | 'ipv4'
-  | 'ipv6'
-  | 'objectWithRest';
 
 class ValibotGenerator {
   private root:
@@ -146,7 +111,7 @@ class ValibotGenerator {
   private refs = new Map<string, string>();
   private schemas: Record<string, AnyNode> = {};
   private dependsOn: Record<string, string[]> = {};
-  private usedImports = new Set<AllowedImports>();
+  private usedImports = new Set<string>();
   private customRules = new Set<CustomRules>();
 
   private __currentSchema: string | null = null;
@@ -222,10 +187,23 @@ class ValibotGenerator {
         /** skip */
       } else if (customRules.includes(node.name as CustomRules)) {
         this.customRules.add(node.name as CustomRules);
-      } else {
+      } else if (['oneOf', 'allOf', 'anyOf', 'const'].includes(node.name)) {
+        switch (node.name) {
+          case 'oneOf':
+          case 'anyOf': {
+            this.usedImports.add('union');
+          }
+          case 'allOf': {
+            this.usedImports.add('intersect');
+          }
+          case 'const': {
+            this.usedImports.add('literal');
+          }
+        }
+      }else {
         // above if statement with `node.name in customRules` does not help
         // inferring that those strings should be omitted
-        this.usedImports.add(node.name as Exclude<AllowedImports, CustomRules>);
+        this.usedImports.add(node.name);
       }
 
       switch (node.name) {
@@ -251,9 +229,15 @@ class ValibotGenerator {
           break;
         case 'array':
         case 'optional':
+        case 'not':
           if (node.value) visit(node.value, schemaName);
           break;
         case 'pipe':
+          node.value.forEach((v) => visit(v, schemaName));
+          break;
+        case 'anyOf':
+        case 'allOf':
+        case 'oneOf':
           node.value.forEach((v) => visit(v, schemaName));
           break;
       }
@@ -741,7 +725,6 @@ class ValibotGenerator {
       case 'array':
         if (!node.value) return 'array()';
         return `array(${this.generateNodeCode(node.value, depth)})`;
-
       case 'integer':
         return 'integer()';
       case 'number':
@@ -829,12 +812,22 @@ class ValibotGenerator {
         return `${node.name}()`;
       }
       case 'const':
-        return '';
-      case 'allOf':
+        return `literal(${JSON.stringify(node.value)})`;
+      case 'allOf': {
+        const inner = node.value.map(item =>
+          `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
+        ).join('');
+        return `intersect([\n${inner}${'  '.repeat(depth - 1)}])`
+      }
       case 'anyOf':
+      case 'oneOf': {
+        const inner = node.value.map(item =>
+          `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
+        ).join('');
+        return `union([\n${inner}${'  '.repeat(depth - 1)}])`
+      }
       case 'not':
-      case 'oneOf':
-        throw new Error(`${node.name} not yet implemented`);
+        return `not(\n${'  '.repeat(depth)}${this.generateNodeCode(node.value, depth + 1)},\n${'  '.repeat(depth - 1)})`;
     }
   }
 

@@ -52,7 +52,7 @@ describe('should generate valibot schemas from JSON Schemas', () => {
     expect(parsed.split('\n')).toEqual(complexRefsSchemaOutput.split('\n'));
   });
 
-  it.skip('should parse JSON Schema with logical operators (anyOf, allof, oneOf, not)', async () => {
+  it('should parse JSON Schema with logical operators (anyOf, allof, oneOf, not)', async () => {
     const schema = await getFileContents(
       'spec/generation/fixtures/input/logical-operators-schema.json'
     );
