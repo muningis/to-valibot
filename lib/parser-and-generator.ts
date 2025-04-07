@@ -99,10 +99,27 @@ const customRules = {
   checkItems((item, i, arr) => arr.indexOf(item) === i, message);`,
     imports: ['CheckItemsAction', 'checkItems'],
   },
+  minEntries: {
+    code: `const minEntries = <Type extends object, Message extends string>(
+  minCount: number,
+  message?: Message
+): CheckAction<Type, Message | undefined> =>
+  check((item) => Object.keys(item).length >= minCount, message);`,
+    imports: ['CheckAction', 'check'],
+  },
+  maxEntries: {
+      code: `const maxEntries = <Type extends object, Message extends string>(
+  maxCount: number,
+  message?: Message
+): CheckAction<Type, Message | undefined> =>
+  check((item) => Object.keys(item).length <= maxCount, message);`,
+        imports: ['CheckAction', 'check'],
+  }
 } as const;
 type CustomRules = keyof typeof customRules;
 
 type AllowedImports =
+  | 'CheckAction'
   | 'CheckItemsAction'
   | 'GenericSchema'
   | 'InferOutput'

@@ -12,5 +12,5 @@
     "strict": true,
     "target": "ES2020"
   },
-  "include": ["lib", "spec"]
+  "include": ["lib"]
 }
