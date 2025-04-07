@@ -108,13 +108,13 @@ const customRules = {
     imports: ['CheckAction', 'check'],
   },
   maxEntries: {
-      code: `const maxEntries = <Type extends object, Message extends string>(
+    code: `const maxEntries = <Type extends object, Message extends string>(
   maxCount: number,
   message?: Message
 ): CheckAction<Type, Message | undefined> =>
   check((item) => Object.keys(item).length <= maxCount, message);`,
-        imports: ['CheckAction', 'check'],
-  }
+    imports: ['CheckAction', 'check'],
+  },
 } as const;
 type CustomRules = keyof typeof customRules;
 
