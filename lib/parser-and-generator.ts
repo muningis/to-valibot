@@ -711,7 +711,7 @@ class ValibotGenerator {
         const inner: string = items
           .map(([key, item]) => {
             return item.name === 'optional'
-              ? `${'  '.repeat(depth)}${key}?: ${this.generateNodeType(item.value, depth + 1)};\n`
+              ? `${'  '.repeat(depth)}${key}?: ${this.generateNodeType(item.value, depth + 1)} | undefined;\n`
               : `${'  '.repeat(depth)}${key}: ${this.generateNodeType(item, depth + 1)};\n`;
           })
           .join('');
