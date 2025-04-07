@@ -94,6 +94,22 @@ const actionUniqueItems: Action<ActionNodeUniqueItems> = (message) => ({
   message,
 });
 
+type ActionNodeMinEntries = ActionNodeBase<'minEntries', number>;
+const actionMinEntries: Action<ActionNodeMinEntries> = (value, message) => ({
+  name: 'minEntries',
+  value,
+  custom: true,
+  message,
+});
+
+type ActionNodeMaxEntries = ActionNodeBase<'maxEntries', number>;
+const actionMaxEntries: Action<ActionNodeMaxEntries> = (value, message) => ({
+  name: 'maxEntries',
+  value,
+  custom: true,
+  message,
+});
+
 type ActionNodeEmail = ActionNodeBase<'email'>;
 const actionEmail: Action<ActionNodeEmail> = (message) => ({
   name: 'email',
@@ -156,6 +172,8 @@ type ActionNode =
   | ActionNodeIsoTime
   | ActionNodeRegex
   | ActionNodeUniqueItems
+  | ActionNodeMinEntries
+  | ActionNodeMaxEntries
   | ActionNodeDescription
   | ActionNodeIPv4
   | ActionNodeIPv6;
@@ -327,6 +345,8 @@ export {
   actionUUID,
   actionRegex,
   actionUniqueItems,
+  actionMinEntries,
+  actionMaxEntries,
   actionMaxValue,
   actionMinValue,
   actionMultipleOf,

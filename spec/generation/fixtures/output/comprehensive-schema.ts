@@ -1,16 +1,6 @@
-import { isoDateTime, pipe, array, InferOutput, literal, union, object, objectWithRest, string, CheckAction, check } from "valibot"
+import { isoDateTime, pipe, array, InferOutput, literal, union, object, objectWithRest, string } from "valibot"
+import { maxEntries, minEntries } from "to-valibot/client";
 
-const minEntries = <Type extends object, Message extends string>(
-  minCount: number,
-  message?: Message
-): CheckAction<Type, Message | undefined> =>
-  check((item) => Object.keys(item).length >= minCount, message);
-
-const maxEntries = <Type extends object, Message extends string>(
-  maxCount: number,
-  message?: Message
-): CheckAction<Type, Message | undefined> =>
-  check((item) => Object.keys(item).length <= maxCount, message);
 
 export const ComprehensiveSchema = object({
   simpleAdditionalProps: objectWithRest({}, string()),

@@ -1,10 +1,5 @@
-import { CheckItemsAction, InferOutput, array, boolean, checkItems, description, email, integer, maxLength, maxValue, minLength, minValue, number, object, optional, pipe, string } from "valibot";
-
-
-const uniqueItems = <Type, Message extends string>(
-  message?: Message
-): CheckItemsAction<Type[], Message | undefined> =>
-  checkItems((item, i, arr) => arr.indexOf(item) === i, message);
+import { InferOutput, array, boolean, description, email, integer, maxLength, maxValue, minLength, minValue, number, object, optional, pipe, string } from "valibot";
+import { uniqueItems } from "to-valibot/client";
 
 
 export const NoRefsSchema = pipe(object({

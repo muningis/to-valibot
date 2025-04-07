@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ValibotGenerator } from '../lib/parser-and-generator';
+import { ValibotGenerator } from '../../lib/parser-and-generator';
 import { getFileContents } from './utils/get-file-contents';
 
 describe('should generate valibot schemas from OpenAPI yaml declaration file', () => {
   it('should parse small declaration file', async () => {
     const schema = await getFileContents(
-      'spec/fixtures/input/small-schema.yaml'
+      'spec/generation/fixtures/input/small-schema.yaml'
     );
     const smallSchema = await getFileContents(
-      'spec/fixtures/output/small-schema.ts'
+      'spec/generation/fixtures/output/small-schema.ts'
     );
     const parser = new ValibotGenerator(schema, 'openapi-yaml');
     const parsed = parser.generate();
@@ -17,10 +17,10 @@ describe('should generate valibot schemas from OpenAPI yaml declaration file', (
 
   it('should parse complicated declaration file', async () => {
     const schema = await getFileContents(
-      'spec/fixtures/input/complicated-schema.yaml'
+      'spec/generation/fixtures/input/complicated-schema.yaml'
     );
     const complexSchema = await getFileContents(
-      'spec/fixtures/output/complicated-schema.ts'
+      'spec/generation/fixtures/output/complicated-schema.ts'
     );
     const parser = new ValibotGenerator(schema, 'openapi-yaml');
     const parsed = parser.generate();

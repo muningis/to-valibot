@@ -46,6 +46,7 @@ import {
   schemaNodeReference,
   schemaNodeString,
   schemaNodeUnion,
+  actionMinEntries,
 } from './schema-nodes.ts';
 import type {
   JSONSchema,
@@ -91,32 +92,8 @@ const JSONSchemaSchema = object({
 });
 type JSONSchemaSchema = InferOutput<typeof JSONSchemaSchema>;
 
-const customRules = {
-  uniqueItems: {
-    code: `const uniqueItems = <Type, Message extends string>(
-  message?: Message
-): CheckItemsAction<Type[], Message | undefined> =>
-  checkItems((item, i, arr) => arr.indexOf(item) === i, message);`,
-    imports: ['CheckItemsAction', 'checkItems'],
-  },
-  minEntries: {
-    code: `const minEntries = <Type extends object, Message extends string>(
-  minCount: number,
-  message?: Message
-): CheckAction<Type, Message | undefined> =>
-  check((item) => Object.keys(item).length >= minCount, message);`,
-    imports: ['CheckAction', 'check'],
-  },
-  maxEntries: {
-    code: `const maxEntries = <Type extends object, Message extends string>(
-  maxCount: number,
-  message?: Message
-): CheckAction<Type, Message | undefined> =>
-  check((item) => Object.keys(item).length <= maxCount, message);`,
-    imports: ['CheckAction', 'check'],
-  },
-} as const;
-type CustomRules = keyof typeof customRules;
+const customRules = ['uniqueItems', 'minEntries', 'maxEntries'] as const;
+type CustomRules = (typeof customRules)[number];
 
 type AllowedImports =
   | 'CheckAction'
@@ -243,11 +220,8 @@ class ValibotGenerator {
         this.usedImports.add(node.type);
       } else if (node.name === '$ref') {
         /** skip */
-      } else if (node.name in customRules) {
-        this.customRules.add('uniqueItems');
-        for (const imp of customRules[node.name as CustomRules].imports) {
-          this.usedImports.add(imp);
-        }
+      } else if (customRules.includes(node.name as CustomRules)) {
+        this.customRules.add(node.name as CustomRules);
       } else {
         // above if statement with `node.name in customRules` does not help
         // inferring that those strings should be omitted
@@ -300,11 +274,9 @@ class ValibotGenerator {
       else return a.localeCompare(b);
     });
     output.push(`import { `, imports.join(', '), ' } from "valibot";\n');
-
     const cr = Array.from(this.customRules.values());
-    if (cr.length > 0) {
-      output.push('\n\n');
-      output.push(cr.map((rule) => customRules[rule].code).join('\n\n'), '\n');
+    if (cr.length) {
+      output.push(`import { `, Array.from(this.customRules.values()).join(', '), ' } from "to-valibot/client";\n');
     }
 
     const schemas = topologicalSort(this.schemas, this.dependsOn);
@@ -671,6 +643,12 @@ class ValibotGenerator {
     if (schema.description !== undefined) {
       actions.push(actionDescription(schema.description));
     }
+    if (schema.minProperties !== undefined) {
+      actions.push(actionMinEntries(schema.minProperties))
+    }
+    if (schema.maxProperties !== undefined) {
+      actions.push(actionMinEntries(schema.maxProperties))
+    }
 
     if (actions.length) value = methodPipe(value, actions);
     if (!required) value = schemaNodeOptional({ value });
@@ -694,7 +672,9 @@ class ValibotGenerator {
       case 'isoDate':
       case 'isoTime':
       case 'ipv4':
-      case 'ipv6': {
+      case 'ipv6':
+      case 'minEntries':
+      case 'maxEntries': {
         return '';
       }
       case 'pipe': {
@@ -836,6 +816,8 @@ class ValibotGenerator {
         return `union([\n${inner}${'  '.repeat(depth - 1)}])`;
       }
       case 'uniqueItems':
+      case 'minEntries':
+      case 'maxEntries':
       case 'uuid':
       case 'boolean':
       case 'email':

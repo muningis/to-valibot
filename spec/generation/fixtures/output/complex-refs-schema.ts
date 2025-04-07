@@ -1,10 +1,5 @@
-import { CheckItemsAction, InferOutput, array, checkItems, isoDateTime, literal, object, optional, pipe, string, union, uuid } from "valibot";
-
-
-const uniqueItems = <Type, Message extends string>(
-  message?: Message
-): CheckItemsAction<Type[], Message | undefined> =>
-  checkItems((item, i, arr) => arr.indexOf(item) === i, message);
+import { InferOutput, array, isoDateTime, literal, object, optional, pipe, string, union, uuid } from "valibot";
+import { uniqueItems } from "to-valibot/client";
 
 
 export const StatusSchema = union([
