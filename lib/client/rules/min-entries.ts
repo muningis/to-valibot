@@ -1,4 +1,4 @@
-import { CheckAction, check } from "valibot";
+import { check, type CheckAction } from 'valibot';
 
 const minEntries = <Type extends object, Message extends string>(
   minCount: number,
@@ -6,4 +6,4 @@ const minEntries = <Type extends object, Message extends string>(
 ): CheckAction<Type, Message | undefined> =>
   check((item) => Object.keys(item).length >= minCount, message);
 
-export { minEntries }
+export { minEntries };

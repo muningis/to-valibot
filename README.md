@@ -140,13 +140,13 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | object                          | ✅     |                                                                     |
 | patternProperties               | ❌     |                                                                     |
 | additionalProperties            | ✅     |                                                                     |
-| minProperties                   | ⚠️      | https://github.com/fabian-hiller/valibot/pull/1100                  |
-| maxProperties                   | ⚠️      | https://github.com/fabian-hiller/valibot/pull/1100                  |
+| minProperties                   | ✅     |                                                                     |
+| maxProperties                   | ✅     |                                                                     |
 |---------------------------------|--------|---------------------------------------------------------------------|
 | boolean                         | ✅     |                                                                     |
 | null                            | ✅     |                                                                     |
 |---------------------------------|--------|---------------------------------------------------------------------|
-| anyOf                           | ❌     |                                                                     |
-| allOf                           | ❌     |                                                                     |
-| oneOf                           | ❌     |                                                                     |
-| not                             | ❌     |                                                                     |
+| anyOf                           | ✅     |                                                                     |
+| allOf                           | ✅     |                                                                     |
+| oneOf                           | ✅     |                                                                     |
+| not                             | ⚠️      | Unfortunately type inference for this is not working.               |

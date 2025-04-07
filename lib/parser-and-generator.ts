@@ -22,6 +22,7 @@ import {
   actionIsoTime,
   actionMaxLength,
   actionMaxValue,
+  actionMinEntries,
   actionMinLength,
   actionMinValue,
   actionMultipleOf,
@@ -46,7 +47,6 @@ import {
   schemaNodeReference,
   schemaNodeString,
   schemaNodeUnion,
-  actionMinEntries,
 } from './schema-nodes.ts';
 import type {
   JSONSchema,
@@ -192,15 +192,18 @@ class ValibotGenerator {
           case 'oneOf':
           case 'anyOf': {
             this.usedImports.add('union');
+            break;
           }
           case 'allOf': {
             this.usedImports.add('intersect');
+            break;
           }
           case 'const': {
             this.usedImports.add('literal');
+            break;
           }
         }
-      }else {
+      } else {
         // above if statement with `node.name in customRules` does not help
         // inferring that those strings should be omitted
         this.usedImports.add(node.name);
@@ -260,7 +263,11 @@ class ValibotGenerator {
     output.push(`import { `, imports.join(', '), ' } from "valibot";\n');
     const cr = Array.from(this.customRules.values());
     if (cr.length) {
-      output.push(`import { `, Array.from(this.customRules.values()).join(', '), ' } from "to-valibot/client";\n');
+      output.push(
+        `import { `,
+        Array.from(this.customRules.values()).join(', '),
+        ' } from "to-valibot/client";\n'
+      );
     }
 
     const schemas = topologicalSort(this.schemas, this.dependsOn);
@@ -628,10 +635,10 @@ class ValibotGenerator {
       actions.push(actionDescription(schema.description));
     }
     if (schema.minProperties !== undefined) {
-      actions.push(actionMinEntries(schema.minProperties))
+      actions.push(actionMinEntries(schema.minProperties));
     }
     if (schema.maxProperties !== undefined) {
-      actions.push(actionMinEntries(schema.maxProperties))
+      actions.push(actionMinEntries(schema.maxProperties));
     }
 
     if (actions.length) value = methodPipe(value, actions);
@@ -814,17 +821,23 @@ class ValibotGenerator {
       case 'const':
         return `literal(${JSON.stringify(node.value)})`;
       case 'allOf': {
-        const inner = node.value.map(item =>
-          `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
-        ).join('');
-        return `intersect([\n${inner}${'  '.repeat(depth - 1)}])`
+        const inner = node.value
+          .map(
+            (item) =>
+              `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
+          )
+          .join('');
+        return `intersect([\n${inner}${'  '.repeat(depth - 1)}])`;
       }
       case 'anyOf':
       case 'oneOf': {
-        const inner = node.value.map(item =>
-          `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
-        ).join('');
-        return `union([\n${inner}${'  '.repeat(depth - 1)}])`
+        const inner = node.value
+          .map(
+            (item) =>
+              `${'  '.repeat(depth)}${this.generateNodeCode(item, depth + 1)},\n`
+          )
+          .join('');
+        return `union([\n${inner}${'  '.repeat(depth - 1)}])`;
       }
       case 'not':
         return `not(\n${'  '.repeat(depth)}${this.generateNodeCode(node.value, depth + 1)},\n${'  '.repeat(depth - 1)})`;
