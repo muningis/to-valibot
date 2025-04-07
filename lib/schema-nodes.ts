@@ -2,12 +2,12 @@ type ExtractAdditionalProps<T extends { name: string }> = {
   [K in keyof T as K extends keyof { name: string } ? never : K]: T[K];
 };
 type ExtractRequiredKeys<T extends object> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+  [K in keyof T]-?: object extends Pick<T, K> ? never : K;
 }[keyof T];
 
 type HasProps<T extends object> = keyof T extends never ? false : true;
 
-type MethodNodeBase<Name extends string, Value extends unknown> = {
+type MethodNodeBase<Name extends string, Value> = {
   name: Name;
   value: Value;
 };
@@ -25,19 +25,25 @@ type Action<Node extends ActionNode> = Node extends { value: infer V }
 
 type ActionNodeBase<
   Name extends string,
-  Value extends unknown = undefined,
+  Value = undefined,
 > = Value extends undefined
   ? {
       name: Name;
-      message?: string;
+      message?: string | undefined;
       custom?: true;
     }
   : {
       value: Value;
       name: Name;
-      message?: string;
+      message?: string | undefined;
       custom?: true;
     };
+
+type ActionNodeInteger = ActionNodeBase<'integer'>;
+const actionInteger: Action<ActionNodeInteger> = (message) => ({
+  name: 'integer',
+  message
+});
 
 type ActionNodeMinLength = ActionNodeBase<'minLength', number>;
 const actionMinLength: Action<ActionNodeMinLength> = (value, message) => ({
@@ -106,7 +112,38 @@ const actionIsoDateTime: Action<ActionNodeIsoDateTime> = (message) => ({
   message,
 });
 
+type ActionNodeIsoDate = ActionNodeBase<'isoDate'>;
+const actionIsoDate: Action<ActionNodeIsoDate> = (message) => ({
+  name: 'isoDate',
+  message,
+});
+
+type ActionNodeIsoTime = ActionNodeBase<'isoTime'>;
+const actionIsoTime: Action<ActionNodeIsoTime> = (message) => ({
+  name: 'isoTime',
+  message,
+});
+
+type ActionNodeDescription = ActionNodeBase<'description', string>;
+const actionDescription: Action<ActionNodeDescription> = (value) => ({
+  name: 'description',
+  value,
+});
+
+type ActionNodeIPv4 = ActionNodeBase<'ipv4'>;
+const actionIPv4: Action<ActionNodeIPv4> = (message) => ({
+  name: 'ipv4',
+  message,
+});
+
+type ActionNodeIPv6 = ActionNodeBase<'ipv6'>;
+const actionIPv6: Action<ActionNodeIPv6> = (message) => ({
+  name: 'ipv6',
+  message,
+});
+
 type ActionNode =
+  | ActionNodeInteger
   | ActionNodeMinLength
   | ActionNodeMaxLength
   | ActionNodeMinValue
@@ -115,8 +152,13 @@ type ActionNode =
   | ActionNodeEmail
   | ActionNodeUUID
   | ActionNodeIsoDateTime
+  | ActionNodeIsoDate
+  | ActionNodeIsoTime
   | ActionNodeRegex
-  | ActionNodeUniqueItems;
+  | ActionNodeUniqueItems
+  | ActionNodeDescription
+  | ActionNodeIPv4
+  | ActionNodeIPv6;
 
 type SchemaNodeBase<Name extends string> = {
   name: Name;
@@ -154,9 +196,12 @@ const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = (props) => ({
   ...props,
 });
 
-type SchemaNodeObject = SchemaNodeBase<'object'> & {
+type SchemaNodeObject = SchemaNodeBase<'object'> & ({
   value: Record<string, AnyNode>;
-};
+  type: "object" | "strictObject" | "objectWithRest";
+  withRest?: AnyNode;
+});
+
 const schemaNodeObject: NodeFactory<SchemaNodeObject> = (props) => ({
   name: 'object',
   ...props,
@@ -178,6 +223,38 @@ const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
   ...props,
 });
 
+type SchemaNodeAllOf = SchemaNodeBase<'allOf'> & {
+  value: AnyNode[];
+}
+const schemaNodeAllOf: NodeFactory<SchemaNodeAllOf> = (props) => ({
+  name: 'allOf',
+  ...props,
+});
+
+type SchemaNodeAnyOf = SchemaNodeBase<'anyOf'> & {
+  value: AnyNode[];
+}
+const schemaNodeAnyOf: NodeFactory<SchemaNodeAnyOf> = (props) => ({
+  name: 'anyOf',
+  ...props,
+});
+
+type SchemaNodeOneOf = SchemaNodeBase<'oneOf'> & {
+  value: AnyNode[];
+}
+const schemaNodeOneOf: NodeFactory<SchemaNodeOneOf> = (props) => ({
+  name: 'oneOf',
+  ...props,
+});
+
+type SchemaNodeNot = SchemaNodeBase<'not'> & {
+  value: AnyNode;
+}
+const schemaNodeNot: NodeFactory<SchemaNodeNot> = (props) => ({
+  name: 'not',
+  ...props,
+});
+
 type SchemaNodeNull = SchemaNodeBase<'null'>;
 const schemaNodeNull: NodeFactory<SchemaNodeNull> = (props) => ({
   name: 'null',
@@ -185,7 +262,7 @@ const schemaNodeNull: NodeFactory<SchemaNodeNull> = (props) => ({
 });
 
 type SchemaNodeLiteral = SchemaNodeBase<'literal'> & {
-  value?: any;
+  value?: string | number;
 };
 const schemaNodeLiteral: NodeFactory<SchemaNodeLiteral> = (props) => ({
   name: 'literal',
@@ -201,11 +278,19 @@ const schemaNodeOptional: NodeFactory<SchemaNodeOptional> = (props) => ({
 });
 
 type SchemaNodeReference = SchemaNodeBase<'$ref'> & {
-  ref?: string;
+  ref: string;
   lazy?: boolean;
 };
 const schemaNodeReference: NodeFactory<SchemaNodeReference> = (props) => ({
   name: '$ref',
+  ...props,
+});
+
+type SchemaNodeConst = SchemaNodeBase<'const'> & {
+  value: any
+};
+const schemaNodeConst: NodeFactory<SchemaNodeConst> = (props) => ({
+  name: 'const',
   ...props,
 });
 
@@ -220,23 +305,34 @@ type SchemaNode =
   | SchemaNodeNull
   | SchemaNodeOptional
   | SchemaNodeLiteral
-  | SchemaNodeReference;
+  | SchemaNodeReference
+  | SchemaNodeAllOf
+  | SchemaNodeAnyOf
+  | SchemaNodeOneOf
+  | SchemaNodeNot
+  | SchemaNodeConst;
 
 type AnyNode = SchemaNode | MethodNode | ActionNode;
 
 export type { ActionNode, AnyNode, SchemaNode };
 export {
   methodPipe,
+  actionInteger,
   actionMinLength,
   actionMaxLength,
   actionEmail,
   actionIsoDateTime,
+  actionIsoDate,
+  actionIsoTime,
   actionUUID,
   actionRegex,
   actionUniqueItems,
   actionMaxValue,
   actionMinValue,
   actionMultipleOf,
+  actionDescription,
+  actionIPv4,
+  actionIPv6,
   schemaNodeString,
   schemaNodeNumber,
   schemaNodeBoolean,
@@ -248,4 +344,9 @@ export {
   schemaNodeNull,
   schemaNodeLiteral,
   schemaNodeReference,
+  schemaNodeAllOf,
+  schemaNodeAnyOf,
+  schemaNodeNot,
+  schemaNodeOneOf,
+  schemaNodeConst
 };

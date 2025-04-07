@@ -2,7 +2,7 @@ import {
   any,
   array,
   check,
-  InferOutput,
+  type InferOutput,
   object,
   optional,
   parse,
@@ -12,41 +12,53 @@ import {
 } from 'valibot';
 import { parse as parseYaml } from 'yaml';
 import {
+  actionDescription,
   actionEmail,
+  actionInteger,
+  actionIPv4,
+  actionIPv6,
+  actionIsoDate,
   actionIsoDateTime,
+  actionIsoTime,
   actionMaxLength,
   actionMaxValue,
   actionMinLength,
   actionMinValue,
   actionMultipleOf,
-  ActionNode,
+  type ActionNode,
   actionRegex,
   actionUniqueItems,
   actionUUID,
-  AnyNode,
+  type AnyNode,
   methodPipe,
+  schemaNodeAllOf,
+  schemaNodeAnyOf,
   schemaNodeArray,
   schemaNodeBoolean,
+  schemaNodeConst,
   schemaNodeLiteral,
+  schemaNodeNot,
   schemaNodeNull,
   schemaNodeNumber,
   schemaNodeObject,
+  schemaNodeOneOf,
   schemaNodeOptional,
   schemaNodeReference,
   schemaNodeString,
   schemaNodeUnion,
-} from './schema-nodes';
+} from './schema-nodes.ts';
 import type {
   JSONSchema,
   JSONSchemaArray,
   JSONSchemaBoolean,
+  JSONSchemaNull,
   JSONSchemaNumber,
   JSONSchemaObject,
   JSONSchemaString,
-} from './types';
-import { appendSchema, capitalize, normalizeTitle } from './utils/basic';
-import { findAndHandleCircularReferences } from './utils/circular-refs';
-import { topologicalSort } from './utils/topological-sort';
+} from './types.ts';
+import { appendSchema, capitalize, normalizeTitle } from './utils/basic.ts';
+import { findAndHandleCircularReferences } from './utils/circular-refs.ts';
+import { topologicalSort } from './utils/topological-sort.ts';
 
 const OpenAPISchema = object({
   info: object({
@@ -61,6 +73,7 @@ const JSONSchemaSchema = object({
   $schema: string(),
   title: string(),
   type: string(),
+  description: optional(string()),
   definitions: optional(
     record(
       string(),
@@ -89,34 +102,39 @@ const customRules = {
 } as const;
 type CustomRules = keyof typeof customRules;
 
-const allowedImports = [
-  'CheckItemsAction',
-  'GenericSchema',
-  'InferOutput',
-  'array',
-  'boolean',
-  'check',
-  'checkItems',
-  'email',
-  'lazy',
-  'literal',
-  'maxLength',
-  'maxValue',
-  'minLength',
-  'minValue',
-  'multipleOf',
-  'null',
-  'number',
-  'object',
-  'optional',
-  'pipe',
-  'regex',
-  'string',
-  'union',
-  'uuid',
-  'isoDateTime',
-] as const;
-type AllowedImports = (typeof allowedImports)[number];
+type AllowedImports =
+  | 'CheckItemsAction'
+  | 'GenericSchema'
+  | 'InferOutput'
+  | 'array'
+  | 'boolean'
+  | 'check'
+  | 'checkItems'
+  | 'email'
+  | 'integer'
+  | 'lazy'
+  | 'literal'
+  | 'maxLength'
+  | 'maxValue'
+  | 'minLength'
+  | 'minValue'
+  | 'multipleOf'
+  | 'null'
+  | 'number'
+  | 'object'
+  | 'optional'
+  | 'pipe'
+  | 'regex'
+  | 'string'
+  | 'strictObject'
+  | 'union'
+  | 'uuid'
+  | 'isoDateTime'
+  | 'isoDate'
+  | 'isoTime'
+  | 'ipv4'
+  | 'ipv6'
+  | 'objectWithRest';
 
 class ValibotGenerator {
   private root:
@@ -127,15 +145,15 @@ class ValibotGenerator {
         title: string;
       };
 
-  get title() {
+  get title(): string {
     return this.root.title;
   }
 
-  private refs: Map<string, string> = new Map();
+  private refs = new Map<string, string>();
   private schemas: Record<string, AnyNode> = {};
   private dependsOn: Record<string, string[]> = {};
-  private usedImports: Set<AllowedImports> = new Set();
-  private customRules: Set<CustomRules> = new Set();
+  private usedImports = new Set<AllowedImports>();
+  private customRules = new Set<CustomRules>();
 
   private __currentSchema: string | null = null;
 
@@ -144,7 +162,10 @@ class ValibotGenerator {
     format: 'openapi-json' | 'openapi-yaml' | 'json'
   );
   constructor(content: object, format: 'openapi-json' | 'json');
-  constructor(content: any, format: 'openapi-json' | 'openapi-yaml' | 'json') {
+  constructor(
+    content: string | object,
+    format: 'openapi-json' | 'openapi-yaml' | 'json'
+  ) {
     switch (format) {
       case 'openapi-json': {
         const parsed = parse(
@@ -159,7 +180,7 @@ class ValibotGenerator {
         return this;
       }
       case 'openapi-yaml': {
-        const parsed = parse(OpenAPISchema, parseYaml(content));
+        const parsed = parse(OpenAPISchema, parseYaml(content as string));
         this.root = {
           value: parsed.components.schemas,
           format,
@@ -182,7 +203,7 @@ class ValibotGenerator {
     }
   }
 
-  public generate() {
+  public generate(): string {
     switch (this.root.format) {
       case 'openapi-json':
       case 'openapi-yaml': {
@@ -195,13 +216,15 @@ class ValibotGenerator {
       }
     }
 
-    this.usedImports.add("InferOutput");
+    this.usedImports.add('InferOutput');
 
     const { circularReferences, selfReferencing } =
       findAndHandleCircularReferences(this.dependsOn);
 
     const visit = (node: AnyNode, schemaName: string) => {
-      if (node.name === 'integer') this.usedImports.add('number');
+      if (node.name === 'object') {
+        this.usedImports.add(node.type);
+      }
       else if (node.name === '$ref') {
         /** skip */
       } else if (node.name in customRules) {
@@ -209,13 +232,17 @@ class ValibotGenerator {
         for (const imp of customRules[node.name as CustomRules].imports) {
           this.usedImports.add(imp);
         }
-      } else this.usedImports.add(node.name as any);
+      } else {
+        // above if statement with `node.name in customRules` does not help
+        // inferring that those strings should be omitted
+        this.usedImports.add(node.name as Exclude<AllowedImports, CustomRules>);
+      }
 
       switch (node.name) {
         case '$ref':
           if (
-            (selfReferencing.includes(node.ref!) && schemaName === node.ref) ||
-            circularReferences[schemaName]?.includes(node.ref!)
+            (selfReferencing.includes(node.ref) && schemaName === node.ref) ||
+            circularReferences[schemaName]?.includes(node.ref)
           ) {
             this.usedImports.add('GenericSchema');
             this.usedImports.add('lazy');
@@ -260,16 +287,13 @@ class ValibotGenerator {
 
     const cr = Array.from(this.customRules.values());
     if (cr.length > 0) {
-      output.push("\n\n");
-      output.push(
-        cr.map((rule) => customRules[rule].code).join('\n\n'),
-        '\n'
-      );
+      output.push('\n\n');
+      output.push(cr.map((rule) => customRules[rule].code).join('\n\n'), '\n');
     }
 
     const schemas = topologicalSort(this.schemas, this.dependsOn);
     for (const [schemaName, schemaNode] of schemas) {
-      output.push("\n\n");
+      output.push('\n\n');
       const schemaCode = this.generateSchemaCode(schemaNode);
       if (
         selfReferencing.includes(schemaName) ||
@@ -289,7 +313,9 @@ class ValibotGenerator {
         );
       } else {
         output.push(`export const ${schemaName} = ${schemaCode};`, '\n\n');
-        output.push(`export type ${schemaName.replace(/Schema/, '')} = InferOutput<typeof ${schemaName}>;\n`);
+        output.push(
+          `export type ${schemaName.replace(/Schema/, '')} = InferOutput<typeof ${schemaName}>;\n`
+        );
       }
     }
 
@@ -315,7 +341,8 @@ class ValibotGenerator {
     this.schemas[name] = this.parseObjectType({
       type: 'object',
       properties: values.properties,
-      required: values.required,
+      required: values.required ?? [],
+      description: values.description,
     });
   }
 
@@ -351,6 +378,8 @@ class ValibotGenerator {
               ref: capitalize(appendSchema(schemaName)),
             }),
           });
+    } else if ('const' in schema) {
+      return schemaNodeConst({ value: schema.const })
     } else if ('type' in schema) {
       switch (schema.type) {
         case 'string':
@@ -373,33 +402,47 @@ class ValibotGenerator {
         case 'object':
           return this.parseObjectType(schema, required);
         case 'null':
-          return this.parseNullType();
+          return this.parseNullType(schema, required);
         default:
-          throw new Error(`Unsupported type: ${(schema as any).type}`);
+          throw new Error(
+            `Unsupported type: ${(schema as { type: string }).type}`
+          );
       }
-    } else
+    } else {
+      if (schema.allOf !== undefined) {
+        return schemaNodeAllOf({ value: schema.allOf.map(item => this.parseSchema(item, true)) })
+      } else if (schema.oneOf !== undefined) {
+        return schemaNodeOneOf({ value: schema.oneOf.map(item => this.parseSchema(item, true)) })
+      } else if (schema.anyOf !== undefined) {
+        return schemaNodeAnyOf({ value: schema.anyOf.map(item => this.parseSchema(item, true)) })
+      } else if (schema.not !== undefined) {
+        return schemaNodeNot({ value: this.parseSchema(schema.not, true) });
+      }
+      console.error(schema);
       throw new Error(
         '`allOf`, `anyOf`, `oneOf` and `not` are not yet implemented'
       );
+    }
   }
 
   private parseEnumType(
     schema: JSONSchemaString | JSONSchemaNumber,
     required: boolean
   ): AnyNode {
-    const content = schema.enum!.map((value) => {
-      const val =
-        schema.type === 'string'
-          ? `'${value}'`
-          : schema.type === 'number' || schema.type === 'integer'
-            ? value
-            : null;
-      return schemaNodeLiteral({ value: val });
+    const actions: ActionNode[] = [];
+    const content = schema.enum!.map((v) => {
+      const value = schema.type === 'string' ? `'${v}'` : v;
+      return schemaNodeLiteral({ value });
     });
 
-    return required
-      ? schemaNodeUnion({ value: content })
-      : schemaNodeOptional({ value: schemaNodeUnion({ value: content }) });
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
+    }
+
+    let value: AnyNode = schemaNodeUnion({ value: content });
+    if (actions.length) value = methodPipe(value, actions);
+    if (!required) value = schemaNodeOptional({ value });
+    return value;
   }
 
   private parseStringType(
@@ -409,28 +452,67 @@ class ValibotGenerator {
     let value: AnyNode = schemaNodeString();
 
     const actions: ActionNode[] = [];
-    if ('minLength' in schema && schema.minLength !== undefined) {
+    if (schema.minLength !== undefined) {
       actions.push(actionMinLength(schema.minLength));
     }
     if (schema.maxLength !== undefined) {
-      this.usedImports.add('maxLength');
       actions.push(actionMaxLength(schema.maxLength));
     }
 
-    if (schema.format === 'email') {
-      this.usedImports.add('email');
-      actions.push(actionEmail());
-    } else if (schema.format === 'uuid') {
-      this.usedImports.add('uuid');
-      actions.push(actionUUID());
-    } else if (schema.format === 'date-time') {
-      this.usedImports.add('isoDateTime');
-      actions.push(actionIsoDateTime());
+    switch (schema.format) {
+      case "email":
+        actions.push(actionEmail());
+        break;
+      case "uuid":
+        actions.push(actionUUID());
+        break;
+      case "date-time":
+        actions.push(actionIsoDateTime());
+        break;
+      case "date": {
+        actions.push(actionIsoDate());
+        break;
+      }
+      case "time":
+        actions.push(actionIsoTime());
+        break;
+      case "duration":
+        console.error('format="duration" not yet implemented!')
+      case "idn-email":
+        console.error('format="idn-email" not yet implemented!')
+      case "hostname":
+        console.error('format="hostname" not yet implemented!')
+      case "idn-hostname":
+        console.error('format="idn-hostname" not yet implemented!')
+      case "ipv4":
+        actions.push(actionIPv4());
+        break;
+      case "ipv6":
+        actions.push(actionIPv6());
+        break;
+      case "json-pointer":
+        console.error('format="json-pointer" not yet implemented!')
+      case "relative-json-pointer":
+        console.error('format="relative-json-pointer" not yet implemented!')
+      case "uri":
+        console.error('format="uri" not yet implemented!')
+      case "uri-reference":
+        console.error('format="uri-reference" not yet implemented!')
+      case "uri-template":
+        console.error('format="uri-template" not yet implemented!')
+      case "iri":
+        console.error('format="iri" not yet implemented!')
+      case "iri-reference":
+        console.error('format="iri-reference" not yet implemented!')
     }
 
+
     if (schema.pattern) {
-      this.usedImports.add('regex');
       actions.push(actionRegex(schema.pattern));
+    }
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
     }
 
     if (actions.length) value = methodPipe(value, actions);
@@ -446,6 +528,8 @@ class ValibotGenerator {
     let value: AnyNode = schemaNodeNumber();
 
     const actions: ActionNode[] = [];
+    if (schema.type === "integer") actions.push(actionInteger());
+
     if (schema.minimum !== undefined)
       actions.push(actionMinValue(schema.minimum));
     else if (schema.exclusiveMinimum !== undefined)
@@ -457,6 +541,10 @@ class ValibotGenerator {
 
     if (schema.multipleOf !== undefined)
       actions.push(actionMultipleOf(schema.multipleOf));
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
+    }
 
     if (actions.length) value = methodPipe(value, actions);
     if (!required) value = schemaNodeOptional({ value });
@@ -477,15 +565,17 @@ class ValibotGenerator {
     const actions: ActionNode[] = [];
 
     if (schema.minItems !== undefined) {
-      this.usedImports.add('minLength');
       actions.push(actionMinLength(schema.minItems));
     }
     if (schema.maxItems !== undefined) {
-      this.usedImports.add('maxLength');
       actions.push(actionMaxLength(schema.maxItems));
     }
     if (schema.uniqueItems) {
       actions.push(actionUniqueItems());
+    }
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
     }
 
     if (actions.length) value = methodPipe(value, actions);
@@ -499,12 +589,28 @@ class ValibotGenerator {
     required: boolean
   ): AnyNode {
     let value: AnyNode = schemaNodeBoolean();
+    const actions: ActionNode[] = [];
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
+    }
+
+    if (actions.length) value = methodPipe(value, actions);
     if (!required) value = schemaNodeOptional({ value });
     return value;
   }
 
-  private parseNullType(): AnyNode {
-    return schemaNodeNull();
+  private parseNullType(schema: JSONSchemaNull, required?: boolean): AnyNode {
+    let value: AnyNode = schemaNodeNull();
+    const actions: ActionNode[] = [];
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
+    }
+
+    if (actions.length) value = methodPipe(value, actions);
+    if (!required) value = schemaNodeOptional({ value });
+    return value;
   }
 
   private parseObjectType(schema: JSONSchemaObject, required = true): AnyNode {
@@ -517,8 +623,21 @@ class ValibotGenerator {
         .filter(Boolean)
     );
 
-    let value: AnyNode = schemaNodeObject({ value: content });
+    const type = schema.additionalProperties === false
+      ? "strictObject"
+      : typeof schema.additionalProperties === "object"
+      ? "objectWithRest"
+      : "object";
+    let value: AnyNode = schemaNodeObject({
+      value: content,
+      type,
+      withRest: type === "objectWithRest" ? this.parseSchema(schema.additionalProperties, true) : undefined
+    });
     const actions: ActionNode[] = [];
+
+    if (schema.description !== undefined) {
+      actions.push(actionDescription(schema.description));
+    }
 
     if (actions.length) value = methodPipe(value, actions);
     if (!required) value = schemaNodeOptional({ value });
@@ -537,7 +656,12 @@ class ValibotGenerator {
       case 'maxValue':
       case 'minLength':
       case 'minValue':
-      case 'regex': {
+      case 'regex':
+      case 'description':
+      case 'isoDate':
+      case 'isoTime':
+      case 'ipv4':
+      case 'ipv6': {
         return '';
       }
       case 'pipe': {
@@ -550,7 +674,7 @@ class ValibotGenerator {
         return node.name;
       }
       case '$ref': {
-        return node.ref!.replace(/Schema/, '');
+        return node.ref.replace(/Schema/, '');
       }
       case 'array': {
         if (!node.value) return `any[]`;
@@ -593,18 +717,15 @@ class ValibotGenerator {
     switch (node.name) {
       case '$ref':
         if (node.lazy) return `lazy(() => ${node.ref})`;
-        return node.ref!;
+        return node.ref;
       case 'array':
-        return `array(${this.generateNodeCode(node.value!, depth)})`;
-      case 'boolean':
-        return 'boolean()';
-      case 'email':
-        return `email()`;
+        if (!node.value) return 'array()';
+        return `array(${this.generateNodeCode(node.value, depth)})`;
+      
       case 'integer':
+        return 'integer()';
       case 'number':
         return `number()`;
-      case 'isoDateTime':
-        return 'isoDateTime()';
       case 'literal':
         return `literal(${node.value})`;
       case 'maxLength':
@@ -617,11 +738,28 @@ class ValibotGenerator {
         return `minValue(${node.value})`;
       case 'multipleOf':
         return `multipleOf(${node.value})`;
+      case 'description':
+        return `description("${node.value}")`;
       case 'null':
         return 'null()';
       case 'object': {
+        const kind = node.type;
+        const withRest = node.type === "objectWithRest" ? node.withRest : undefined;
+        if (withRest) {
+          const items = Object.entries(node.value);
+          if (items.length === 0) return `objectWithRest({}, ${this.generateNodeCode(withRest, depth)})`;
+  
+          const inner: string = items
+            .map(
+              ([key, item]) =>
+                `${'  '.repeat(depth)}${key}: ${this.generateNodeCode(item, depth + 1)},\n`
+            )
+            .join('');
+          return `objectWithRest({\n${inner}${'  '.repeat(depth - 1)}},\n${'  '.repeat(depth - 1)}${this.generateNodeCode(withRest, depth)})`;
+        }
+
         const items = Object.entries(node.value);
-        if (items.length === 0) return `object({})`;
+        if (items.length === 0) return `${kind}({})`;
 
         const inner: string = items
           .map(
@@ -629,7 +767,7 @@ class ValibotGenerator {
               `${'  '.repeat(depth)}${key}: ${this.generateNodeCode(item, depth + 1)},\n`
           )
           .join('');
-        return `object({\n${inner}${'  '.repeat(depth - 1)}})`;
+        return `${kind}({\n${inner}${'  '.repeat(depth - 1)}})`;
       }
       case 'optional':
         return `optional(${this.generateNodeCode(node.value, depth)})`;
@@ -655,11 +793,16 @@ class ValibotGenerator {
             .join('') ?? '';
         return `union([\n${inner}${'  '.repeat(depth - 1)}])`;
       }
-      case 'uniqueItems': {
-        return `uniqueItems()`;
-      }
-      case 'uuid': {
-        return 'uuid()';
+      case 'uniqueItems':
+      case 'uuid':
+      case 'boolean':
+      case 'email':
+      case 'isoDateTime':
+      case 'isoDate':
+      case 'isoTime':
+      case 'ipv4':
+      case 'ipv6': {
+        return `${node.name}()`;
       }
     }
   }

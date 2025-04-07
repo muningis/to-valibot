@@ -1,4 +1,4 @@
-import { array, email, maxLength, object, optional, pipe, string, uuid } from "valibot";
+import { InferOutput, array, email, maxLength, object, optional, pipe, string, uuid } from "valibot";
 
 
 export const AddressSchema = object({
@@ -8,11 +8,15 @@ export const AddressSchema = object({
   postalCode: optional(string()),
 });
 
+export type Address = InferOutput<typeof AddressSchema>;
+
 
 export const ContactSchema = object({
   phone: string(),
   email: pipe(string(), email()),
 });
+
+export type Contact = InferOutput<typeof ContactSchema>;
 
 
 export const MediumRefsSchema = object({
@@ -23,3 +27,5 @@ export const MediumRefsSchema = object({
   primaryContact: ContactSchema,
   secondaryContacts: optional(pipe(array(ContactSchema), maxLength(3))),
 });
+
+export type MediumRefs = InferOutput<typeof MediumRefsSchema>;

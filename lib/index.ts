@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
-import { ValibotGenerator } from './parser-and-generator';
-import { slugify } from './utils/basic';
+import { ValibotGenerator } from './parser-and-generator.ts';
+import { slugify } from './utils/basic.ts';
 
 interface GeneratorOptions {
   outDir: string;
@@ -12,8 +12,13 @@ type GenerateOptions =
   | { format: 'openapi-json' | 'json' | 'openapi-yaml'; schema: string }
   | { format: 'openapi-json' | 'json' | 'openapi-yaml'; schemas: string[] };
 
-const valibotGenerator = (options: GeneratorOptions) => {
-  const generate = async (opt: GenerateOptions) => {
+interface ValibotGeneratorReturn {
+  generate: (opt: GenerateOptions) => Promise<void>;
+}
+const valibotGenerator = (
+  options: GeneratorOptions
+): ValibotGeneratorReturn => {
+  const generate = async (opt: GenerateOptions): Promise<void> => {
     if ('schemas' in opt) {
       for (const schema of opt.schemas) {
         const schemaCode =
