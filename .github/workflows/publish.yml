@@ -24,7 +24,7 @@ jobs:
         uses: ./.github/actions/environment
       - name: Build to-valibot
         run: pnpm build
-      - name: Publish to-json-schema
+      - name: Publish to-valibot
         run: pnpm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
