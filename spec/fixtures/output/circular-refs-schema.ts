@@ -3,8 +3,8 @@ import { GenericSchema, InferOutput, array, lazy, object, optional, string } fro
 
 export type Person = {
   name: string;
-  spouse?: Person;
-  children?: Person[];
+  spouse?: Person | undefined;
+  children?: Person[] | undefined;
 }
 
 export const PersonSchema: GenericSchema<Person> = object({
@@ -16,9 +16,9 @@ export const PersonSchema: GenericSchema<Person> = object({
 
 export type Employee = {
   name: string;
-  company?: Company;
-  manager?: Employee;
-  subordinates?: Employee[];
+  company?: Company | undefined;
+  manager?: Employee | undefined;
+  subordinates?: Employee[] | undefined;
 }
 
 export const EmployeeSchema: GenericSchema<Employee> = object({
@@ -31,7 +31,7 @@ export const EmployeeSchema: GenericSchema<Employee> = object({
 
 export type Company = {
   name: string;
-  employees?: Employee[];
+  employees?: Employee[] | undefined;
 }
 
 export const CompanySchema: GenericSchema<Company> = object({

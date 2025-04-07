@@ -4,7 +4,7 @@ import { GenericSchema, InferOutput, array, lazy, object, optional, pipe, string
 export type TreeNode = {
   id: string;
   name: string;
-  children?: TreeNode[];
+  children?: TreeNode[] | undefined;
 }
 
 export const TreeNodeSchema: GenericSchema<TreeNode> = object({
@@ -16,7 +16,7 @@ export const TreeNodeSchema: GenericSchema<TreeNode> = object({
 
 export type LinkedListNode = {
   value: string;
-  next?: LinkedListNode;
+  next?: LinkedListNode | undefined;
 }
 
 export const LinkedListNodeSchema: GenericSchema<LinkedListNode> = object({

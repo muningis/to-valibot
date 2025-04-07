@@ -224,8 +224,7 @@ class ValibotGenerator {
     const visit = (node: AnyNode, schemaName: string) => {
       if (node.name === 'object') {
         this.usedImports.add(node.type);
-      }
-      else if (node.name === '$ref') {
+      } else if (node.name === '$ref') {
         /** skip */
       } else if (node.name in customRules) {
         this.customRules.add('uniqueItems');
@@ -379,7 +378,9 @@ class ValibotGenerator {
             }),
           });
     } else if ('const' in schema) {
-      return schemaNodeConst({ value: schema.const })
+      return schemaNodeConst({
+        value: schema.const as string | number | boolean,
+      });
     } else if ('type' in schema) {
       switch (schema.type) {
         case 'string':
@@ -410,11 +411,17 @@ class ValibotGenerator {
       }
     } else {
       if (schema.allOf !== undefined) {
-        return schemaNodeAllOf({ value: schema.allOf.map(item => this.parseSchema(item, true)) })
+        return schemaNodeAllOf({
+          value: schema.allOf.map((item) => this.parseSchema(item, true)),
+        });
       } else if (schema.oneOf !== undefined) {
-        return schemaNodeOneOf({ value: schema.oneOf.map(item => this.parseSchema(item, true)) })
+        return schemaNodeOneOf({
+          value: schema.oneOf.map((item) => this.parseSchema(item, true)),
+        });
       } else if (schema.anyOf !== undefined) {
-        return schemaNodeAnyOf({ value: schema.anyOf.map(item => this.parseSchema(item, true)) })
+        return schemaNodeAnyOf({
+          value: schema.anyOf.map((item) => this.parseSchema(item, true)),
+        });
       } else if (schema.not !== undefined) {
         return schemaNodeNot({ value: this.parseSchema(schema.not, true) });
       }
@@ -460,52 +467,51 @@ class ValibotGenerator {
     }
 
     switch (schema.format) {
-      case "email":
+      case 'email':
         actions.push(actionEmail());
         break;
-      case "uuid":
+      case 'uuid':
         actions.push(actionUUID());
         break;
-      case "date-time":
+      case 'date-time':
         actions.push(actionIsoDateTime());
         break;
-      case "date": {
+      case 'date': {
         actions.push(actionIsoDate());
         break;
       }
-      case "time":
+      case 'time':
         actions.push(actionIsoTime());
         break;
-      case "duration":
-        console.error('format="duration" not yet implemented!')
-      case "idn-email":
-        console.error('format="idn-email" not yet implemented!')
-      case "hostname":
-        console.error('format="hostname" not yet implemented!')
-      case "idn-hostname":
-        console.error('format="idn-hostname" not yet implemented!')
-      case "ipv4":
+      case 'duration':
+        throw new Error('format="duration" not yet implemented!');
+      case 'idn-email':
+        throw new Error('format="idn-email" not yet implemented!');
+      case 'hostname':
+        throw new Error('format="hostname" not yet implemented!');
+      case 'idn-hostname':
+        throw new Error('format="idn-hostname" not yet implemented!');
+      case 'ipv4':
         actions.push(actionIPv4());
         break;
-      case "ipv6":
+      case 'ipv6':
         actions.push(actionIPv6());
         break;
-      case "json-pointer":
-        console.error('format="json-pointer" not yet implemented!')
-      case "relative-json-pointer":
-        console.error('format="relative-json-pointer" not yet implemented!')
-      case "uri":
-        console.error('format="uri" not yet implemented!')
-      case "uri-reference":
-        console.error('format="uri-reference" not yet implemented!')
-      case "uri-template":
-        console.error('format="uri-template" not yet implemented!')
-      case "iri":
-        console.error('format="iri" not yet implemented!')
-      case "iri-reference":
-        console.error('format="iri-reference" not yet implemented!')
+      case 'json-pointer':
+        throw new Error('format="json-pointer" not yet implemented!');
+      case 'relative-json-pointer':
+        throw new Error('format="relative-json-pointer" not yet implemented!');
+      case 'uri':
+        throw new Error('format="uri" not yet implemented!');
+      case 'uri-reference':
+        throw new Error('format="uri-reference" not yet implemented!');
+      case 'uri-template':
+        throw new Error('format="uri-template" not yet implemented!');
+      case 'iri':
+        throw new Error('format="iri" not yet implemented!');
+      case 'iri-reference':
+        throw new Error('format="iri-reference" not yet implemented!');
     }
-
 
     if (schema.pattern) {
       actions.push(actionRegex(schema.pattern));
@@ -528,7 +534,7 @@ class ValibotGenerator {
     let value: AnyNode = schemaNodeNumber();
 
     const actions: ActionNode[] = [];
-    if (schema.type === "integer") actions.push(actionInteger());
+    if (schema.type === 'integer') actions.push(actionInteger());
 
     if (schema.minimum !== undefined)
       actions.push(actionMinValue(schema.minimum));
@@ -623,16 +629,26 @@ class ValibotGenerator {
         .filter(Boolean)
     );
 
-    const type = schema.additionalProperties === false
-      ? "strictObject"
-      : typeof schema.additionalProperties === "object"
-      ? "objectWithRest"
-      : "object";
-    let value: AnyNode = schemaNodeObject({
-      value: content,
-      type,
-      withRest: type === "objectWithRest" ? this.parseSchema(schema.additionalProperties, true) : undefined
-    });
+    const type =
+      schema.additionalProperties === false
+        ? 'strictObject'
+        : typeof schema.additionalProperties === 'object'
+          ? 'objectWithRest'
+          : 'object';
+    let value: AnyNode =
+      type === 'objectWithRest'
+        ? schemaNodeObject({
+            value: content,
+            type,
+            withRest: this.parseSchema(
+              schema.additionalProperties as object,
+              true
+            ),
+          })
+        : schemaNodeObject({
+            value: content,
+            type,
+          });
     const actions: ActionNode[] = [];
 
     if (schema.description !== undefined) {
@@ -707,6 +723,13 @@ class ValibotGenerator {
           .join(' | ');
         return `(${inner})`;
       }
+      case 'const':
+        return JSON.stringify(node.value);
+      case 'not':
+      case 'allOf':
+      case 'anyOf':
+      case 'oneOf':
+        throw new Error(`${node.name} not yet implemented`);
       case 'optional': {
         throw new Error('Top-level optional is unsupported');
       }
@@ -721,7 +744,7 @@ class ValibotGenerator {
       case 'array':
         if (!node.value) return 'array()';
         return `array(${this.generateNodeCode(node.value, depth)})`;
-      
+
       case 'integer':
         return 'integer()';
       case 'number':
@@ -744,11 +767,13 @@ class ValibotGenerator {
         return 'null()';
       case 'object': {
         const kind = node.type;
-        const withRest = node.type === "objectWithRest" ? node.withRest : undefined;
+        const withRest =
+          node.type === 'objectWithRest' ? node.withRest : undefined;
         if (withRest) {
           const items = Object.entries(node.value);
-          if (items.length === 0) return `objectWithRest({}, ${this.generateNodeCode(withRest, depth)})`;
-  
+          if (items.length === 0)
+            return `objectWithRest({}, ${this.generateNodeCode(withRest, depth)})`;
+
           const inner: string = items
             .map(
               ([key, item]) =>
@@ -804,6 +829,13 @@ class ValibotGenerator {
       case 'ipv6': {
         return `${node.name}()`;
       }
+      case 'const':
+        return '';
+      case 'allOf':
+      case 'anyOf':
+      case 'not':
+      case 'oneOf':
+        throw new Error(`${node.name} not yet implemented`);
     }
   }
 

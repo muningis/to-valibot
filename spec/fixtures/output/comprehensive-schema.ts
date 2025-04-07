@@ -1,6 +1,4 @@
-import { isoDateTime, minSize, pipe } from "valibot";
-import { array, InferOutput, literal, union } from "valibot";
-import { object, objectWithRest, string } from "valibot"
+import { isoDateTime, pipe, array, InferOutput, literal, union, object, objectWithRest, string } from "valibot"
 
 export const ComprehensiveSchema = object({
   simpleAdditionalProps: objectWithRest({}, string()),
@@ -17,7 +15,7 @@ export const ComprehensiveSchema = object({
       created: pipe(string(), isoDateTime())
     })
   })),
-  limitedProperties: pipe(objectWithRest({}, string()), minProperties(2), maxProperties(5)),
+  limitedProperties: pipe(objectWithRest({}, string()), minEntries(2), maxEntries(5)),
   constantValue: literal("fixed-value-123"),
   formatStrings: object({
 

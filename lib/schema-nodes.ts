@@ -42,7 +42,7 @@ type ActionNodeBase<
 type ActionNodeInteger = ActionNodeBase<'integer'>;
 const actionInteger: Action<ActionNodeInteger> = (message) => ({
   name: 'integer',
-  message
+  message,
 });
 
 type ActionNodeMinLength = ActionNodeBase<'minLength', number>;
@@ -196,11 +196,11 @@ const schemaNodeBoolean: NodeFactory<SchemaNodeBoolean> = (props) => ({
   ...props,
 });
 
-type SchemaNodeObject = SchemaNodeBase<'object'> & ({
+type SchemaNodeObject = SchemaNodeBase<'object'> & {
   value: Record<string, AnyNode>;
-  type: "object" | "strictObject" | "objectWithRest";
+  type: 'object' | 'strictObject' | 'objectWithRest';
   withRest?: AnyNode;
-});
+};
 
 const schemaNodeObject: NodeFactory<SchemaNodeObject> = (props) => ({
   name: 'object',
@@ -225,7 +225,7 @@ const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
 
 type SchemaNodeAllOf = SchemaNodeBase<'allOf'> & {
   value: AnyNode[];
-}
+};
 const schemaNodeAllOf: NodeFactory<SchemaNodeAllOf> = (props) => ({
   name: 'allOf',
   ...props,
@@ -233,7 +233,7 @@ const schemaNodeAllOf: NodeFactory<SchemaNodeAllOf> = (props) => ({
 
 type SchemaNodeAnyOf = SchemaNodeBase<'anyOf'> & {
   value: AnyNode[];
-}
+};
 const schemaNodeAnyOf: NodeFactory<SchemaNodeAnyOf> = (props) => ({
   name: 'anyOf',
   ...props,
@@ -241,7 +241,7 @@ const schemaNodeAnyOf: NodeFactory<SchemaNodeAnyOf> = (props) => ({
 
 type SchemaNodeOneOf = SchemaNodeBase<'oneOf'> & {
   value: AnyNode[];
-}
+};
 const schemaNodeOneOf: NodeFactory<SchemaNodeOneOf> = (props) => ({
   name: 'oneOf',
   ...props,
@@ -249,7 +249,7 @@ const schemaNodeOneOf: NodeFactory<SchemaNodeOneOf> = (props) => ({
 
 type SchemaNodeNot = SchemaNodeBase<'not'> & {
   value: AnyNode;
-}
+};
 const schemaNodeNot: NodeFactory<SchemaNodeNot> = (props) => ({
   name: 'not',
   ...props,
@@ -287,7 +287,7 @@ const schemaNodeReference: NodeFactory<SchemaNodeReference> = (props) => ({
 });
 
 type SchemaNodeConst = SchemaNodeBase<'const'> & {
-  value: any
+  value: string | boolean | number;
 };
 const schemaNodeConst: NodeFactory<SchemaNodeConst> = (props) => ({
   name: 'const',
@@ -348,5 +348,5 @@ export {
   schemaNodeAnyOf,
   schemaNodeNot,
   schemaNodeOneOf,
-  schemaNodeConst
+  schemaNodeConst,
 };
