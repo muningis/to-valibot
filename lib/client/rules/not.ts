@@ -1,4 +1,9 @@
-import { custom, type CustomSchema, type GenericSchema, safeParse } from 'valibot';
+import {
+  custom,
+  type CustomSchema,
+  type GenericSchema,
+  safeParse,
+} from 'valibot';
 
 const not = <Schema extends GenericSchema, Message extends string>(
   schema: Schema,

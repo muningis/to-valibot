@@ -95,7 +95,7 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | required                        | ✅     |                                                                     |
 | description                     | ✅     |                                                                     |
 | const                           | ⚠️      | Only works with primitive values                                    |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | string                          | ✅     |                                                                     |
 | enum                            | ✅     |                                                                     |
 | minLength                       | ✅     |                                                                     |
@@ -119,7 +119,7 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | format="uri-template"           | ❌     |                                                                     |
 | format="iri"                    | ❌     |                                                                     |
 | format="iri-reference"          | ❌     |                                                                     |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | number                          | ✅     |                                                                     |
 | integer                         | ✅     |                                                                     |
 | exclusiveMaximum                | ✅     |                                                                     |
@@ -127,7 +127,7 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | maximum                         | ✅     |                                                                     |
 | minium                          | ✅     |                                                                     |
 | multipleOf                      | ✅     |                                                                     |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | array                           | ⚠️      | Only single array item kind is supported for now                    |
 | minItems                        | ✅     |                                                                     |
 | maxItems                        | ✅     |                                                                     |
@@ -136,16 +136,16 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | contains                        | ❌     |                                                                     |
 | minContains                     | ❌     |                                                                     |
 | maxContains                     | ❌     |                                                                     |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | object                          | ✅     |                                                                     |
 | patternProperties               | ❌     |                                                                     |
 | additionalProperties            | ✅     |                                                                     |
 | minProperties                   | ✅     |                                                                     |
 | maxProperties                   | ✅     |                                                                     |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | boolean                         | ✅     |                                                                     |
 | null                            | ✅     |                                                                     |
-|---------------------------------|--------|---------------------------------------------------------------------|
+| -                               | -      | -                                                                   |
 | anyOf                           | ✅     |                                                                     |
 | allOf                           | ✅     |                                                                     |
 | oneOf                           | ✅     |                                                                     |
