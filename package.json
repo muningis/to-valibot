@@ -1,6 +1,6 @@
 {
   "name": "to-valibot",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "author": "Rokas Muningis",
   "repository": {
@@ -11,6 +11,7 @@
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": ["dist", "LICENSE.md", "README.md"],
   "exports": {
     ".": {
       "import": {
