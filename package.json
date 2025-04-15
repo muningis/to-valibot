@@ -11,7 +11,14 @@
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "LICENSE.md", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "README.md",
+    "client.js",
+    "client.cjs",
+    "client.d.ts"
+  ],
   "exports": {
     ".": {
       "import": {
