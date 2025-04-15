@@ -8,7 +8,7 @@ Utility to convert JSON Schemas and OpenAPI Declarations to [Valibot](https://va
 ```ts
 import { valibotGenerator } from "to-valibot";
 
-const generate = valibotGenerator({
+const { generate } = valibotGenerator({
   outDir: "./src/types",
 });
 
@@ -29,7 +29,7 @@ await generate({
 import { readFile } from "node:fs/promises";;
 import { valibotGenerator } from "to-valibot";
 
-const generate = valibotGenerator({
+const { generate } = valibotGenerator({
   outDir: "./src/types",
 });
 
@@ -47,13 +47,31 @@ import { readFile } from "node:fs/promises";;
 import { valibotGenerator } from to-valibot";
 import schema from "~/schemas/my-api.json";
 
-const generate = valibotGenerator({
+const { generate } = valibotGenerator({
   outDir: "./src/types",
 });
 
 await generate({
   format: 'json',
   schema,
+});
+```
+
+### 3. Provide name to your schemas
+```ts
+import { readFile } from "node:fs/promises";;
+import { valibotGenerator } from to-valibot";
+import schema from "~/schemas/my-api.json";
+
+const { generate } = valibotGenerator({
+  outDir: "./src/types",
+});
+
+await generate({
+  format: 'json',
+  schemas: {
+    "My Awesome API Schema": schema // will output to `./src/types/my-awesome-api-schema.ts`
+  },
 });
 ```
 
