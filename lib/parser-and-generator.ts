@@ -749,7 +749,7 @@ class ValibotGenerator {
       case 'multipleOf':
         return `multipleOf(${node.value})`;
       case 'description':
-        return `description("${node.value}")`;
+        return node.value.includes("\n") ? `description(\`${node.value}\`)` : `description("${node.value}")`;
       case 'null':
         return 'null()';
       case 'object': {
