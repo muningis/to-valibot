@@ -63,8 +63,12 @@ interface JSONSchemaObject extends JSONSchemaBase<object> {
   dependencies?: Record<string, JSONSchema | string[]>;
 }
 
+interface JSONSchemaAllOf extends JSONSchemaBase<never> {
+  allOf: JSONSchema[];
+  required?: string[];
+}
+
 interface JSONSchemaCombined extends JSONSchemaBase<never> {
-  allOf?: JSONSchema[];
   anyOf?: JSONSchema[];
   oneOf?: JSONSchema[];
   not?: JSONSchema;
@@ -81,6 +85,7 @@ type JSONSchema =
   | JSONSchemaNull
   | JSONSchemaArray
   | JSONSchemaObject
+  | JSONSchemaAllOf
   | JSONSchemaCombined
   | JSONSchemaRef;
 
@@ -92,6 +97,7 @@ export type {
   JSONSchemaNull,
   JSONSchemaArray,
   JSONSchemaObject,
+  JSONSchemaAllOf,
   JSONSchemaCombined,
   JSONSchemaRef,
 };

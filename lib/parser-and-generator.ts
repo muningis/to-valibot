@@ -56,6 +56,7 @@ import type {
   JSONSchemaNumber,
   JSONSchemaObject,
   JSONSchemaString,
+  JSONSchemaAllOf,
 } from './types.ts';
 import { appendSchema, capitalize, normalizeTitle } from './utils/basic.ts';
 import { findAndHandleCircularReferences } from './utils/circular-refs.ts';
@@ -341,7 +342,8 @@ class ValibotGenerator {
 
   private parseSchema<Schema extends JSONSchema>(
     schema: Schema,
-    required: boolean
+    required: boolean,
+    meta?: { parentRequired?: string[] }
   ): AnyNode {
     if ('$ref' in schema) {
       const schemaName = schema.$ref
@@ -367,43 +369,54 @@ class ValibotGenerator {
           if ('enum' in schema) {
             return this.parseEnumType(schema, required);
           } else {
-            return this.parseStringType(schema, required);
+            return this.parseStringType(schema, required, meta);
           }
         case 'number':
         case 'integer':
           if ('enum' in schema) {
             return this.parseEnumType(schema, required);
           } else {
-            return this.parseNumberType(schema, required);
+            return this.parseNumberType(schema, required, meta);
           }
         case 'boolean':
-          return this.parseBooleanType(schema, required);
+          return this.parseBooleanType(schema, required, meta);
         case 'array':
-          return this.parseArrayType(schema, required);
+          return this.parseArrayType(schema, required, meta);
         case 'object':
-          return this.parseObjectType(schema, required);
+          return this.parseObjectType(schema, required, meta);
         case 'null':
-          return this.parseNullType(schema, required);
+          return this.parseNullType(schema, required, meta);
         default:
           throw new Error(
             `Unsupported type: ${(schema as { type: string }).type}`
           );
       }
     } else {
-      if (schema.allOf !== undefined) {
+      if ('allOf' in schema) {
+        const allOfRequired = (schema as JSONSchemaAllOf).required ?? [];
+        const combinedRequired = [
+          ...allOfRequired,
+          ...(meta?.parentRequired ?? []),
+        ];
         return schemaNodeAllOf({
-          value: schema.allOf.map((item) => this.parseSchema(item, true)),
+          value: schema.allOf.map((item) =>
+            this.parseSchema(item, true, { parentRequired: combinedRequired }),
+          ),
         });
-      } else if (schema.oneOf !== undefined) {
+      } else if ('oneOf' in schema) {
         return schemaNodeOneOf({
-          value: schema.oneOf.map((item) => this.parseSchema(item, true)),
+          value: schema.oneOf.map((item) =>
+            this.parseSchema(item, true, meta),
+          ),
         });
-      } else if (schema.anyOf !== undefined) {
+      } else if ('anyOf' in schema) {
         return schemaNodeAnyOf({
-          value: schema.anyOf.map((item) => this.parseSchema(item, true)),
+          value: schema.anyOf.map((item) =>
+            this.parseSchema(item, true, meta),
+          ),
         });
-      } else if (schema.not !== undefined) {
-        return schemaNodeNot({ value: this.parseSchema(schema.not, true) });
+      } else if ('not' in schema) {
+        return schemaNodeNot({ value: this.parseSchema(schema.not, true, meta) });
       }
       console.error(schema);
       throw new Error(
@@ -434,7 +447,8 @@ class ValibotGenerator {
 
   private parseStringType(
     schema: JSONSchemaString,
-    required: boolean
+    required: boolean,
+    meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeString();
 
@@ -509,7 +523,8 @@ class ValibotGenerator {
 
   private parseNumberType(
     schema: JSONSchemaNumber,
-    required: boolean
+    required: boolean,
+    meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeNumber();
 
@@ -538,15 +553,21 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseArrayType(schema: JSONSchemaArray, required: boolean): AnyNode {
+  private parseArrayType(
+    schema: JSONSchemaArray,
+    required: boolean,
+    meta?: { parentRequired?: string[] }
+  ): AnyNode {
     if (!schema.items) {
       return schemaNodeArray({});
     }
     const kind = Array.isArray(schema.items)
       ? schemaNodeUnion({
-          value: schema.items.map((item) => this.parseSchema(item, true)),
+          value: schema.items.map((item) =>
+            this.parseSchema(item, true, meta),
+          ),
         })
-      : this.parseSchema(schema.items, true);
+      : this.parseSchema(schema.items, true, meta);
     let value: AnyNode = schemaNodeArray({ value: kind });
     const actions: ActionNode[] = [];
 
@@ -572,7 +593,8 @@ class ValibotGenerator {
 
   private parseBooleanType(
     schema: JSONSchemaBoolean,
-    required: boolean
+    required: boolean,
+    meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeBoolean();
     const actions: ActionNode[] = [];
@@ -586,7 +608,11 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseNullType(schema: JSONSchemaNull, required?: boolean): AnyNode {
+  private parseNullType(
+    schema: JSONSchemaNull,
+    required?: boolean,
+    meta?: { parentRequired?: string[] }
+  ): AnyNode {
     let value: AnyNode = schemaNodeNull();
     const actions: ActionNode[] = [];
 
@@ -599,12 +625,20 @@ class ValibotGenerator {
     return value;
   }
 
-  private parseObjectType(schema: JSONSchemaObject, required = true): AnyNode {
+  private parseObjectType(
+    schema: JSONSchemaObject,
+    required = true,
+    meta?: { parentRequired?: string[] }
+  ): AnyNode {
+    const effectiveRequired = [
+      ...(schema.required ?? []),
+      ...(meta?.parentRequired ?? []),
+    ];
     const content = Object.fromEntries(
       Object.entries(schema.properties ?? {})
         .map(([key, value]) => {
-          const required = schema.required?.includes(key) ?? false;
-          return [key, this.parseSchema(value, required)];
+          const isPropertyRequired = effectiveRequired.includes(key);
+          return [key, this.parseSchema(value, isPropertyRequired, meta)];
         })
         .filter(Boolean)
     );
@@ -622,7 +656,8 @@ class ValibotGenerator {
             type,
             withRest: this.parseSchema(
               schema.additionalProperties as object,
-              true
+              true,
+              meta
             ),
           })
         : schemaNodeObject({
