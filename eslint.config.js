@@ -20,6 +20,9 @@ export default tseslint.config(
       // TypeScript
       '@typescript-eslint/consistent-type-definitions': 'off', // Enforce declaring types using `interface` keyword for better TS performance.
       '@typescript-eslint/consistent-type-imports': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', {
+        "argsIgnorePattern": "^_",
+      }],
 
       // Import
       'import/extensions': ['error', 'always'], // Require file extensions

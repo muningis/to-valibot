@@ -50,13 +50,13 @@ import {
 } from './schema-nodes.ts';
 import type {
   JSONSchema,
+  JSONSchemaAllOf,
   JSONSchemaArray,
   JSONSchemaBoolean,
   JSONSchemaNull,
   JSONSchemaNumber,
   JSONSchemaObject,
   JSONSchemaString,
-  JSONSchemaAllOf,
 } from './types.ts';
 import { appendSchema, capitalize, normalizeTitle } from './utils/basic.ts';
 import { findAndHandleCircularReferences } from './utils/circular-refs.ts';
@@ -400,23 +400,21 @@ class ValibotGenerator {
         ];
         return schemaNodeAllOf({
           value: schema.allOf.map((item) =>
-            this.parseSchema(item, true, { parentRequired: combinedRequired }),
+            this.parseSchema(item, true, { parentRequired: combinedRequired })
           ),
         });
       } else if ('oneOf' in schema) {
         return schemaNodeOneOf({
-          value: schema.oneOf.map((item) =>
-            this.parseSchema(item, true, meta),
-          ),
+          value: schema.oneOf.map((item) => this.parseSchema(item, true, meta)),
         });
       } else if ('anyOf' in schema) {
         return schemaNodeAnyOf({
-          value: schema.anyOf.map((item) =>
-            this.parseSchema(item, true, meta),
-          ),
+          value: schema.anyOf.map((item) => this.parseSchema(item, true, meta)),
         });
       } else if ('not' in schema) {
-        return schemaNodeNot({ value: this.parseSchema(schema.not, true, meta) });
+        return schemaNodeNot({
+          value: this.parseSchema(schema.not, true, meta),
+        });
       }
       console.error(schema);
       throw new Error(
@@ -448,7 +446,7 @@ class ValibotGenerator {
   private parseStringType(
     schema: JSONSchemaString,
     required: boolean,
-    meta?: { parentRequired?: string[] }
+    _meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeString();
 
@@ -524,7 +522,7 @@ class ValibotGenerator {
   private parseNumberType(
     schema: JSONSchemaNumber,
     required: boolean,
-    meta?: { parentRequired?: string[] }
+    _meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeNumber();
 
@@ -563,9 +561,7 @@ class ValibotGenerator {
     }
     const kind = Array.isArray(schema.items)
       ? schemaNodeUnion({
-          value: schema.items.map((item) =>
-            this.parseSchema(item, true, meta),
-          ),
+          value: schema.items.map((item) => this.parseSchema(item, true, meta)),
         })
       : this.parseSchema(schema.items, true, meta);
     let value: AnyNode = schemaNodeArray({ value: kind });
@@ -594,7 +590,7 @@ class ValibotGenerator {
   private parseBooleanType(
     schema: JSONSchemaBoolean,
     required: boolean,
-    meta?: { parentRequired?: string[] }
+    _meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeBoolean();
     const actions: ActionNode[] = [];
@@ -611,7 +607,7 @@ class ValibotGenerator {
   private parseNullType(
     schema: JSONSchemaNull,
     required?: boolean,
-    meta?: { parentRequired?: string[] }
+    _meta?: { parentRequired?: string[] }
   ): AnyNode {
     let value: AnyNode = schemaNodeNull();
     const actions: ActionNode[] = [];
@@ -784,7 +780,9 @@ class ValibotGenerator {
       case 'multipleOf':
         return `multipleOf(${node.value})`;
       case 'description':
-        return node.value.includes("\n") ? `description(\`${node.value}\`)` : `description("${node.value}")`;
+        return node.value.includes('\n')
+          ? `description(\`${node.value}\`)`
+          : `description("${node.value}")`;
       case 'null':
         return 'null()';
       case 'object': {
