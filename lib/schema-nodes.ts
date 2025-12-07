@@ -98,7 +98,6 @@ type ActionNodeMinEntries = ActionNodeBase<'minEntries', number>;
 const actionMinEntries: Action<ActionNodeMinEntries> = (value, message) => ({
   name: 'minEntries',
   value,
-  custom: true,
   message,
 });
 
@@ -106,7 +105,6 @@ type ActionNodeMaxEntries = ActionNodeBase<'maxEntries', number>;
 const actionMaxEntries: Action<ActionNodeMaxEntries> = (value, message) => ({
   name: 'maxEntries',
   value,
-  custom: true,
   message,
 });
 
@@ -146,6 +144,12 @@ const actionDescription: Action<ActionNodeDescription> = (value) => ({
   value,
 });
 
+type ActionNodeExamples = ActionNodeBase<'examples', unknown[]>;
+const actionExamples = (value: unknown[]): ActionNodeExamples => ({
+  name: 'examples',
+  value,
+});
+
 type ActionNodeIPv4 = ActionNodeBase<'ipv4'>;
 const actionIPv4: Action<ActionNodeIPv4> = (message) => ({
   name: 'ipv4',
@@ -156,6 +160,102 @@ type ActionNodeIPv6 = ActionNodeBase<'ipv6'>;
 const actionIPv6: Action<ActionNodeIPv6> = (message) => ({
   name: 'ipv6',
   message,
+});
+
+type ActionNodeUrl = ActionNodeBase<'url'>;
+const actionUrl: Action<ActionNodeUrl> = (message) => ({
+  name: 'url',
+  message,
+});
+
+type ActionNodeContains = {
+  name: 'contains';
+  value: AnyNode;
+  message?: string | undefined;
+  custom: true;
+};
+const actionContains = (
+  value: AnyNode,
+  message?: string
+): ActionNodeContains => ({
+  name: 'contains',
+  value,
+  message,
+  custom: true,
+});
+
+type ActionNodeMinContains = {
+  name: 'minContains';
+  value: AnyNode;
+  requirement: number;
+  message?: string | undefined;
+  custom: true;
+};
+const actionMinContains = (
+  value: AnyNode,
+  requirement: number,
+  message?: string
+): ActionNodeMinContains => ({
+  name: 'minContains',
+  value,
+  requirement,
+  message,
+  custom: true,
+});
+
+type ActionNodeMaxContains = {
+  name: 'maxContains';
+  value: AnyNode;
+  requirement: number;
+  message?: string | undefined;
+  custom: true;
+};
+const actionMaxContains = (
+  value: AnyNode,
+  requirement: number,
+  message?: string
+): ActionNodeMaxContains => ({
+  name: 'maxContains',
+  value,
+  requirement,
+  message,
+  custom: true,
+});
+
+type ActionNodePropertyNames = {
+  name: 'propertyNames';
+  value: AnyNode;
+  message?: string | undefined;
+  custom: true;
+};
+const actionPropertyNames = (
+  value: AnyNode,
+  message?: string
+): ActionNodePropertyNames => ({
+  name: 'propertyNames',
+  value,
+  message,
+  custom: true,
+});
+
+type PatternPropertyEntry = {
+  pattern: string;
+  schema: AnyNode;
+};
+type ActionNodePatternProperties = {
+  name: 'patternProperties';
+  value: PatternPropertyEntry[];
+  message?: string | undefined;
+  custom: true;
+};
+const actionPatternProperties = (
+  value: PatternPropertyEntry[],
+  message?: string
+): ActionNodePatternProperties => ({
+  name: 'patternProperties',
+  value,
+  message,
+  custom: true,
 });
 
 type ActionNode =
@@ -175,8 +275,15 @@ type ActionNode =
   | ActionNodeMinEntries
   | ActionNodeMaxEntries
   | ActionNodeDescription
+  | ActionNodeExamples
   | ActionNodeIPv4
-  | ActionNodeIPv6;
+  | ActionNodeIPv6
+  | ActionNodeUrl
+  | ActionNodeContains
+  | ActionNodeMinContains
+  | ActionNodeMaxContains
+  | ActionNodePropertyNames
+  | ActionNodePatternProperties;
 
 type SchemaNodeBase<Name extends string> = {
   name: Name;
@@ -230,6 +337,15 @@ type SchemaNodeArray = SchemaNodeBase<'array'> & {
 };
 const schemaNodeArray: NodeFactory<SchemaNodeArray> = (props) => ({
   name: 'array',
+  ...props,
+});
+
+type SchemaNodeTuple = SchemaNodeBase<'tuple'> & {
+  items: AnyNode[];
+  rest?: AnyNode;
+};
+const schemaNodeTuple: NodeFactory<SchemaNodeTuple> = (props) => ({
+  name: 'tuple',
   ...props,
 });
 
@@ -289,6 +405,7 @@ const schemaNodeLiteral: NodeFactory<SchemaNodeLiteral> = (props) => ({
 
 type SchemaNodeOptional = SchemaNodeBase<'optional'> & {
   value: AnyNode;
+  default?: unknown;
 };
 const schemaNodeOptional: NodeFactory<SchemaNodeOptional> = (props) => ({
   name: 'optional',
@@ -319,6 +436,7 @@ type SchemaNode =
   | SchemaNodeBoolean
   | SchemaNodeObject
   | SchemaNodeArray
+  | SchemaNodeTuple
   | SchemaNodeUnion
   | SchemaNodeNull
   | SchemaNodeOptional
@@ -351,13 +469,21 @@ export {
   actionMinValue,
   actionMultipleOf,
   actionDescription,
+  actionExamples,
   actionIPv4,
   actionIPv6,
+  actionUrl,
+  actionContains,
+  actionMinContains,
+  actionMaxContains,
+  actionPropertyNames,
+  actionPatternProperties,
   schemaNodeString,
   schemaNodeNumber,
   schemaNodeBoolean,
   schemaNodeObject,
   schemaNodeArray,
+  schemaNodeTuple,
   schemaNodeUnion,
   schemaNodeInteger,
   schemaNodeOptional,

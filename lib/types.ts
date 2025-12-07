@@ -7,6 +7,7 @@ interface JSONSchemaBase<T> {
   $id?: string;
   $schema?: string;
   definitions?: Record<string, JSONSchema>;
+  $defs?: Record<string, JSONSchema>;
   enum?: T[];
   const?: T;
   readOnly?: boolean;
@@ -43,12 +44,15 @@ interface JSONSchemaNull extends JSONSchemaBase<null> {
 
 interface JSONSchemaArray extends JSONSchemaBase<unknown[]> {
   type: 'array';
-  items?: JSONSchema | JSONSchema[];
+  items?: JSONSchema | JSONSchema[] | boolean;
   additionalItems?: boolean | JSONSchema;
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;
   contains?: JSONSchema;
+  minContains?: number;
+  maxContains?: number;
+  prefixItems?: JSONSchema[];
 }
 
 interface JSONSchemaObject extends JSONSchemaBase<object> {

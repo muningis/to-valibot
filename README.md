@@ -124,19 +124,19 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | format="date-time"              | ✅     |                                                                     |
 | format="date"                   | ✅     |                                                                     |
 | format="time"                   | ✅     |                                                                     |
-| format="duration"               | ⚠️      | https://github.com/fabian-hiller/valibot/pull/1102                  |
-| format="idn-email"              | ❌     |                                                                     |
-| format="hostname"               | ❌     |                                                                     |
-| format="idn-hostname"           | ❌     |                                                                     |
+| format="duration"               | ✅     | Custom regex validation                                             |
+| format="idn-email"              | ✅     | Custom regex validation                                             |
+| format="hostname"               | ✅     | Custom regex validation                                             |
+| format="idn-hostname"           | ✅     | Custom regex validation                                             |
 | format="ipv4"                   | ✅     |                                                                     |
 | format="ipv6"                   | ✅     |                                                                     |
-| format="json-pointer"           | ❌     |                                                                     |
-| format="relative-json-pointer"  | ❌     |                                                                     |
-| format="uri"                    | ❌     |                                                                     |
-| format="uri-reference"          | ❌     |                                                                     |
-| format="uri-template"           | ❌     |                                                                     |
-| format="iri"                    | ❌     |                                                                     |
-| format="iri-reference"          | ❌     |                                                                     |
+| format="json-pointer"           | ✅     | Custom regex validation                                             |
+| format="relative-json-pointer"  | ✅     | Custom regex validation                                             |
+| format="uri"                    | ✅     | Uses Valibot's url()                                                |
+| format="uri-reference"          | ✅     | Custom regex validation                                             |
+| format="uri-template"           | ✅     | Custom regex validation                                             |
+| format="iri"                    | ✅     | Uses Valibot's url()                                                |
+| format="iri-reference"          | ✅     | Custom regex validation                                             |
 | -                               | -      | -                                                                   |
 | number                          | ✅     |                                                                     |
 | integer                         | ✅     |                                                                     |
@@ -149,14 +149,15 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | array                           | ⚠️      | Only single array item kind is supported for now                    |
 | minItems                        | ✅     |                                                                     |
 | maxItems                        | ✅     |                                                                     |
-| uniqueItems                     | ✅     |                                                                     |
-| prefixItems                     | ❌     |                                                                     |
-| contains                        | ❌     |                                                                     |
-| minContains                     | ❌     |                                                                     |
-| maxContains                     | ❌     |                                                                     |
+| uniqueItems                     | ✅     | Custom validation from to-valibot/client                            |
+| prefixItems                     | ✅     | Maps to Valibot tuple() and tupleWithRest()                         |
+| contains                        | ✅     | Custom validation from to-valibot/client                            |
+| minContains                     | ✅     | Custom validation from to-valibot/client                            |
+| maxContains                     | ✅     | Custom validation from to-valibot/client                            |
 | -                               | -      | -                                                                   |
 | object                          | ✅     |                                                                     |
-| patternProperties               | ❌     |                                                                     |
+| propertyNames                   | ✅     | Custom validation from to-valibot/client                            |
+| patternProperties               | ✅     | Custom validation from to-valibot/client                            |
 | additionalProperties            | ✅     |                                                                     |
 | minProperties                   | ✅     |                                                                     |
 | maxProperties                   | ✅     |                                                                     |
@@ -167,4 +168,4 @@ Same set of features are supported both in OpenAPI Declarations and JSON Schemas
 | anyOf                           | ✅     |                                                                     |
 | allOf                           | ✅     |                                                                     |
 | oneOf                           | ✅     |                                                                     |
-| not                             | ⚠️      | Unfortunately type inference for this is not working.               |
+| not                             | ✅     | Type inference not supported - custom validation from to-valibot/client |

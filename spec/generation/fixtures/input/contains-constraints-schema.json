@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ContainsConstraints",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "contains": {
+        "type": "string",
+        "pattern": "^tag-"
+      },
+      "minContains": 2,
+      "maxContains": 5
+    },
+    "priorities": {
+      "type": "array",
+      "contains": {
+        "type": "object",
+        "properties": {
+          "level": { "type": "string" },
+          "value": { "type": "number" }
+        },
+        "required": ["level"]
+      },
+      "minContains": 1
+    },
+    "flags": {
+      "type": "array",
+      "contains": {
+        "const": "active"
+      },
+      "maxContains": 3
+    }
+  },
+  "required": ["tags"]
+}

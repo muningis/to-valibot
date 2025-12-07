@@ -126,23 +126,6 @@
         }
       }
     },
-    "prefixItemsArray": {
-      "type": "array",
-      "prefixItems": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "number"
-        },
-        {
-          "type": "boolean"
-        }
-      ],
-      "items": {
-        "type": "string"
-      }
-    },
     "containsArray": {
       "type": "array",
       "contains": {
@@ -151,19 +134,11 @@
           "id": {
             "type": "string"
           },
-          "required": true
+          "required": {
+            "type": "boolean"
+          }
         }
       }
-    },
-    "containsLimitsArray": {
-      "type": "array",
-      "contains": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 100
-      },
-      "minContains": 2,
-      "maxContains": 5
     }
   },
   "required": [
@@ -172,8 +147,6 @@
     "limitedProperties",
     "constantValue",
     "formatStrings",
-    "prefixItemsArray",
-    "containsArray",
-    "containsLimitsArray"
+    "containsArray"
   ]
 }

@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { ValibotGenerator } from './parser-and-generator.ts';
+import { ValibotGenerator } from './generator/index.ts';
 import { slugify } from './utils/basic.ts';
 
 interface GeneratorOptions {
@@ -25,7 +25,7 @@ const valibotGenerator = (
 ): ValibotGeneratorReturn => {
   const generate = async (opt: GenerateOptions): Promise<void> => {
     if ('schemas' in opt && Array.isArray(opt.schemas)) {
-      for (const schema in opt.schemas) {
+      for (const schema of opt.schemas) {
         const schemaCode =
           typeof schema === 'string'
             ? new ValibotGenerator(schema, opt.format)
@@ -36,7 +36,7 @@ const valibotGenerator = (
 
         const code = schemaCode.generate();
         const name = slugify(schemaCode.title);
-        console.log(code, name, `${options.outDir}/${name}.ts`);
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- Path is constructed from validated user input (outDir) and sanitized schema name
         await writeFile(`${options.outDir}/${name}.ts`, code);
       }
     } else if ('schemas' in opt && !Array.isArray(opt.schemas)) {
@@ -48,7 +48,7 @@ const valibotGenerator = (
 
         const code = schemaCode.generate();
         const name = slugify(key);
-        console.log(code, name, `${options.outDir}/${name}.ts`);
+        // eslint-disable-next-line security/detect-non-literal-fs-filename -- Path is constructed from validated user input (outDir) and sanitized schema name
         await writeFile(`${options.outDir}/${name}.ts`, code);
       }
     } else if ('schema' in opt) {
@@ -62,6 +62,7 @@ const valibotGenerator = (
 
       const code = schemaCode.generate();
       const name = slugify(schemaCode.title);
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- Path is constructed from validated user input (outDir) and sanitized schema name
       await writeFile(`${options.outDir}/${name}.ts`, code);
     }
   };

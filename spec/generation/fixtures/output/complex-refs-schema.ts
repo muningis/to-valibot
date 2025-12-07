@@ -3,50 +3,50 @@ import { uniqueItems } from "to-valibot/client";
 
 
 export const StatusSchema = union([
-  literal('active'),
-  literal('inactive'),
-  literal('pending'),
-  literal('suspended'),
+  literal("active"),
+  literal("inactive"),
+  literal("pending"),
+  literal("suspended"),
 ]);
 
 export type Status = InferOutput<typeof StatusSchema>;
 
 
 export const PrioritySchema = union([
-  literal('low'),
-  literal('medium'),
-  literal('high'),
-  literal('critical'),
+  literal("low"),
+  literal("medium"),
+  literal("high"),
+  literal("critical"),
 ]);
 
 export type Priority = InferOutput<typeof PrioritySchema>;
 
 
 export const CategorySchema = union([
-  literal('bug'),
-  literal('feature'),
-  literal('enhancement'),
-  literal('documentation'),
+  literal("bug"),
+  literal("feature"),
+  literal("enhancement"),
+  literal("documentation"),
 ]);
 
 export type Category = InferOutput<typeof CategorySchema>;
 
 
 export const SeveritySchema = union([
-  literal('trivial'),
-  literal('minor'),
-  literal('major'),
-  literal('critical'),
+  literal("trivial"),
+  literal("minor"),
+  literal("major"),
+  literal("critical"),
 ]);
 
 export type Severity = InferOutput<typeof SeveritySchema>;
 
 
 export const UserRoleSchema = union([
-  literal('admin'),
-  literal('manager'),
-  literal('developer'),
-  literal('viewer'),
+  literal("admin"),
+  literal("manager"),
+  literal("developer"),
+  literal("viewer"),
 ]);
 
 export type UserRole = InferOutput<typeof UserRoleSchema>;
@@ -54,10 +54,10 @@ export type UserRole = InferOutput<typeof UserRoleSchema>;
 
 export const PermissionSchema = object({
   action: union([
-    literal('read'),
-    literal('write'),
-    literal('delete'),
-    literal('execute'),
+    literal("read"),
+    literal("write"),
+    literal("delete"),
+    literal("execute"),
   ]),
   resource: string(),
 });

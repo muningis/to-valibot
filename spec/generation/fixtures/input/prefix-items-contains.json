@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PrefixItemsContains",
+  "type": "object",
+  "properties": {
+    "tupleWithContains": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "string" },
+        { "type": "number" }
+      ],
+      "items": { "type": "boolean" },
+      "contains": { "type": "boolean" },
+      "minContains": 1,
+      "maxContains": 3
+    }
+  },
+  "required": ["tupleWithContains"]
+}

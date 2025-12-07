@@ -5,12 +5,12 @@ import { uniqueItems } from "to-valibot/client";
 export const SharedComponentSchema = object({
   sharedId: pipe(string(), uuid()),
   category: union([
-    literal('Type A'),
-    literal('Type B'),
-    literal('Type C'),
+    literal("Type A"),
+    literal("Type B"),
+    literal("Type C"),
   ]),
   validityPeriod: optional(pipe(number(), integer(), minValue(30), maxValue(365))),
-  isPublic: optional(boolean()),
+  isPublic: optional(boolean(), false),
   metadata: optional(object({
     version: pipe(string(), regex(/^\d+\.\d+\.\d+$/)),
     owner: optional(string()),
@@ -26,7 +26,7 @@ export type SharedComponent = InferOutput<typeof SharedComponentSchema>;
 export const MainComponent1Schema = object({
   id: pipe(string(), uuid()),
   name: pipe(string(), minLength(3), maxLength(50), regex(/^[A-Za-z0-9\s]+$/)),
-  requiredCount: optional(pipe(number(), integer(), minValue(1), maxValue(100))),
+  requiredCount: optional(pipe(number(), integer(), minValue(1), maxValue(100)), 10),
   isActive: optional(boolean()),
   tags: optional(pipe(array(string()), minLength(1), maxLength(10), uniqueItems())),
   decimalValue: optional(pipe(number(), minValue(0.1), maxValue(99.9), multipleOf(0.1))),
@@ -52,9 +52,9 @@ export const MainComponent2Schema = object({
     optionValue: boolean(),
   })), maxLength(5))),
   enabledFeatures: optional(array(union([
-    literal('feature1'),
-    literal('feature2'),
-    literal('feature3'),
+    literal("feature1"),
+    literal("feature2"),
+    literal("feature3"),
   ]))),
   statusHistory: optional(objectWithRest({}, pipe(string(), isoDateTime()))),
   sharedData: SharedComponentSchema,

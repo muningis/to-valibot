@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DefsTest",
+  "type": "object",
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      },
+      "required": ["street", "city"]
+    }
+  },
+  "properties": {
+    "homeAddress": { "$ref": "#/$defs/Address" },
+    "workAddress": { "$ref": "#/$defs/Address" }
+  },
+  "required": ["homeAddress"]
+}

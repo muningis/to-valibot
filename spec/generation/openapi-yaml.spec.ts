@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ValibotGenerator } from '../../lib/parser-and-generator';
+import { ValibotGenerator } from '../../lib/generator';
 import { getFileContents } from './utils/get-file-contents';
 
 describe('should generate valibot schemas from OpenAPI yaml declaration file', () => {

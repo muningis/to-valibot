@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectFeatures",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$" }
+    },
+    "config": {
+      "type": "object",
+      "patternProperties": {
+        "^str_": { "type": "string" },
+        "^num_": { "type": "number" }
+      }
+    }
+  },
+  "required": ["metadata"]
+}
