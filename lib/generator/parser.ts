@@ -1,29 +1,29 @@
 import {
   actionContains,
-  actionMinContains,
-  actionMaxContains,
   actionDescription,
-  actionExamples,
-  actionPatternProperties,
-  actionPropertyNames,
   actionEmail,
+  actionExamples,
   actionInteger,
   actionIPv4,
   actionIPv6,
   actionIsoDate,
-  actionUrl,
   actionIsoDateTime,
   actionIsoTime,
+  actionMaxContains,
   actionMaxEntries,
   actionMaxLength,
   actionMaxValue,
+  actionMinContains,
   actionMinEntries,
   actionMinLength,
   actionMinValue,
   actionMultipleOf,
   type ActionNode,
+  actionPatternProperties,
+  actionPropertyNames,
   actionRegex,
   actionUniqueItems,
+  actionUrl,
   actionUUID,
   type AnyNode,
   methodPipe,
@@ -238,7 +238,8 @@ export class SchemaParser {
 
     let value: AnyNode = schemaNodeUnion({ value: content });
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
     return value;
   }
 
@@ -296,7 +297,11 @@ export class SchemaParser {
         break;
       case 'idn-hostname':
         // Simplified internationalized hostname (allows unicode word characters)
-        actions.push(actionRegex('^[\\w](?:[\\w-]{0,61}[\\w])?(?:\\.[\\w](?:[\\w-]{0,61}[\\w])?)*$'));
+        actions.push(
+          actionRegex(
+            '^[\\w](?:[\\w-]{0,61}[\\w])?(?:\\.[\\w](?:[\\w-]{0,61}[\\w])?)*$'
+          )
+        );
         break;
       case 'ipv4':
         actions.push(actionIPv4());
@@ -310,14 +315,18 @@ export class SchemaParser {
         break;
       case 'relative-json-pointer':
         // Relative JSON Pointer
-        actions.push(actionRegex('^(?:0|[1-9]\\d*)(?:#|(?:/(?:[^~/]|~0|~1)*)*)?$'));
+        actions.push(
+          actionRegex('^(?:0|[1-9]\\d*)(?:#|(?:/(?:[^~/]|~0|~1)*)*)?$')
+        );
         break;
       case 'uri':
         actions.push(actionUrl());
         break;
       case 'uri-reference':
         // URI or relative reference
-        actions.push(actionRegex('^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|[^:/?#]*(?:[?#]|$))'));
+        actions.push(
+          actionRegex('^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|[^:/?#]*(?:[?#]|$))')
+        );
         break;
       case 'uri-template':
         // RFC 6570 URI Template (simplified - allows template variables in braces)
@@ -329,7 +338,9 @@ export class SchemaParser {
         break;
       case 'iri-reference':
         // IRI or relative reference (simplified)
-        actions.push(actionRegex('^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|[^:/?#]*(?:[?#]|$))'));
+        actions.push(
+          actionRegex('^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|[^:/?#]*(?:[?#]|$))')
+        );
         break;
     }
 
@@ -345,7 +356,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value: value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value: value, default: schema.default });
 
     return value;
   }
@@ -380,7 +392,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
 
     return value;
   }
@@ -424,7 +437,10 @@ export class SchemaParser {
       const containsSchema = this.parseSchema(schema.contains, true, meta);
 
       // Add contains validation
-      if (schema.minContains !== undefined || schema.maxContains !== undefined) {
+      if (
+        schema.minContains !== undefined ||
+        schema.maxContains !== undefined
+      ) {
         // If minContains or maxContains is specified, use those in addition to the contains schema
         if (schema.minContains !== undefined) {
           actions.push(actionMinContains(containsSchema, schema.minContains));
@@ -446,7 +462,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
 
     return value;
   }
@@ -495,7 +512,10 @@ export class SchemaParser {
     if (schema.contains) {
       const containsSchema = this.parseSchema(schema.contains, true, meta);
 
-      if (schema.minContains !== undefined || schema.maxContains !== undefined) {
+      if (
+        schema.minContains !== undefined ||
+        schema.maxContains !== undefined
+      ) {
         // If minContains or maxContains is specified, use those in addition to the contains schema
         if (schema.minContains !== undefined) {
           actions.push(actionMinContains(containsSchema, schema.minContains));
@@ -543,7 +563,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
     return value;
   }
 
@@ -563,7 +584,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
     return value;
   }
 
@@ -636,7 +658,8 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required) value = schemaNodeOptional({ value, default: schema.default });
+    if (!required)
+      value = schemaNodeOptional({ value, default: schema.default });
 
     return value;
   }

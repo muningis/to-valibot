@@ -12,23 +12,20 @@ interface PatternPropertiesIssue extends BaseIssue<Record<string, unknown>> {
   readonly received: 'invalid';
 }
 
-type PatternPropertiesAction<
-  Message extends string | undefined,
-> = BaseValidation<
-  Record<string, unknown>,
-  Record<string, unknown>,
-  PatternPropertiesIssue
-> & {
-  readonly type: 'pattern_properties';
-  readonly reference: typeof patternProperties;
-  readonly expects: 'valid';
-  readonly patterns: { pattern: RegExp; schema: GenericSchema }[];
-  readonly message: Message | undefined;
-};
+type PatternPropertiesAction<Message extends string | undefined> =
+  BaseValidation<
+    Record<string, unknown>,
+    Record<string, unknown>,
+    PatternPropertiesIssue
+  > & {
+    readonly type: 'pattern_properties';
+    readonly reference: typeof patternProperties;
+    readonly expects: 'valid';
+    readonly patterns: { pattern: RegExp; schema: GenericSchema }[];
+    readonly message: Message | undefined;
+  };
 
-const patternProperties = <
-  Message extends string | undefined = undefined,
->(
+const patternProperties = <Message extends string | undefined = undefined>(
   patterns: { pattern: RegExp; schema: GenericSchema }[],
   message?: Message
 ): PatternPropertiesAction<Message> => ({
@@ -48,7 +45,9 @@ const patternProperties = <
         if (pattern.test(key)) {
           const result = safeParse(schema, value);
           if (!result.success) {
-            errors.push(`Property "${key}" does not match schema for pattern ${pattern}`);
+            errors.push(
+              `Property "${key}" does not match schema for pattern ${pattern}`
+            );
           }
         }
       }

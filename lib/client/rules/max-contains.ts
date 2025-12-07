@@ -54,8 +54,8 @@ const maxContains = <
   async: false,
   '~run'(dataset, _config) {
     const arr = dataset.value as unknown[];
-    const matchCount = arr.filter((item: unknown) =>
-      safeParse(this.schema, item).success
+    const matchCount = arr.filter(
+      (item: unknown) => safeParse(this.schema, item).success
     ).length;
 
     if (matchCount <= this.requirement) {

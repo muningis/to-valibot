@@ -18,7 +18,10 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
       return `array(${generateNodeCode(node.value, depth)})`;
     case 'tuple': {
       const items = node.items
-        .map((item) => `${' '.repeat(depth * 2)}${generateNodeCode(item, depth + 1)},`)
+        .map(
+          (item) =>
+            `${' '.repeat(depth * 2)}${generateNodeCode(item, depth + 1)},`
+        )
         .join('\n');
 
       if (node.rest) {

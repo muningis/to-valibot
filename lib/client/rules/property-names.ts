@@ -59,8 +59,7 @@ const propertyNames = <
       received: 'invalid',
       input: dataset.value,
       message:
-        this.message ??
-        `Invalid property names: ${invalidKeys.join(', ')}`,
+        this.message ?? `Invalid property names: ${invalidKeys.join(', ')}`,
       path: undefined,
       issues: undefined,
       requirement: undefined,

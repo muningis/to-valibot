@@ -161,7 +161,9 @@ class ValibotGenerator {
         /** skip */
       } else if (customRules.includes(node.name as CustomRules)) {
         this.customRulesUsed.add(node.name as CustomRules);
-      } else if (['oneOf', 'allOf', 'anyOf', 'const', 'tuple'].includes(node.name)) {
+      } else if (
+        ['oneOf', 'allOf', 'anyOf', 'const', 'tuple'].includes(node.name)
+      ) {
         switch (node.name) {
           case 'oneOf':
           case 'anyOf': {
