@@ -193,15 +193,32 @@ export class SchemaParser {
       }
     } else {
       if ('allOf' in schema) {
-        const allOfRequired = (schema as JSONSchemaAllOf).required ?? [];
+        const allOfSchema = schema as JSONSchemaAllOf;
+        const allOfRequired = allOfSchema.required ?? [];
         const combinedRequired = [
           ...allOfRequired,
           ...(meta?.parentRequired ?? []),
         ];
+        const allOfItems = schema.allOf.map((item) =>
+          this.parseSchema(item, true, { parentRequired: combinedRequired })
+        );
+
+        // If there are sibling properties, create an object schema and include it
+        if (allOfSchema.properties && Object.keys(allOfSchema.properties).length > 0) {
+          const objectSchema: JSONSchemaObject = {
+            type: 'object',
+            properties: allOfSchema.properties,
+            required: allOfRequired,
+          };
+          if (allOfSchema.additionalProperties !== undefined) {
+            objectSchema.additionalProperties = allOfSchema.additionalProperties;
+          }
+          const siblingObject = this.parseObjectType(objectSchema, true, meta);
+          allOfItems.push(siblingObject);
+        }
+
         return schemaNodeAllOf({
-          value: schema.allOf.map((item) =>
-            this.parseSchema(item, true, { parentRequired: combinedRequired })
-          ),
+          value: allOfItems,
         });
       } else if ('oneOf' in schema) {
         return schemaNodeOneOf({
