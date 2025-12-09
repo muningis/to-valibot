@@ -12,8 +12,8 @@ import type { AnyNode } from '../schema-nodes.ts';
 export function extractDescription(node: AnyNode): string | undefined {
   if (node.name === 'pipe') {
     const descAction = node.value.find((n) => n.name === 'description');
-    if (descAction && 'value' in descAction) {
-      return descAction.value as string;
+    if (descAction && descAction.name === 'description') {
+      return descAction.value;
     }
   }
   // Also check inside optional nodes
@@ -37,16 +37,38 @@ export function generateJSDocComment(
 ): string {
   if (!description) return '';
 
+  // Escape */ to prevent premature JSDoc comment closure
+  const escaped = description.replace(/\*\//g, '*\\/');
+
   // Handle multiline descriptions
-  if (description.includes('\n')) {
-    const lines = description.split('\n');
+  if (escaped.includes('\n')) {
+    const lines = escaped.split('\n');
     const formattedLines = lines
       .map((line) => `${indent} * ${line}`)
       .join('\n');
     return `${indent}/**\n${formattedLines}\n${indent} */\n`;
   }
 
-  return `${indent}/** ${description} */\n`;
+  return `${indent}/** ${escaped} */\n`;
+}
+
+/**
+ * Formats an object property with JSDoc comment if it has a description
+ *
+ * @param key - The property key
+ * @param item - The property value node
+ * @param depth - The current indentation depth
+ *
+ * @returns The formatted property string with optional JSDoc comment
+ */
+function formatObjectProperty(
+  key: string,
+  item: AnyNode,
+  depth: number
+): string {
+  const desc = extractDescription(item);
+  const jsdoc = generateJSDocComment(desc, '  '.repeat(depth));
+  return `${jsdoc}${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`;
 }
 
 /**
@@ -113,12 +135,8 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
         if (items.length === 0)
           return `objectWithRest({}, ${generateNodeCode(withRest, depth)})`;
 
-        const inner: string = items
-          .map(([key, item]) => {
-            const desc = extractDescription(item);
-            const jsdoc = generateJSDocComment(desc, '  '.repeat(depth));
-            return `${jsdoc}${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`;
-          })
+        const inner = items
+          .map(([key, item]) => formatObjectProperty(key, item, depth))
           .join('');
         return `objectWithRest({\n${inner}${'  '.repeat(depth - 1)}},\n${'  '.repeat(depth - 1)}${generateNodeCode(withRest, depth)})`;
       }
@@ -126,12 +144,8 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
       const items = Object.entries(node.value);
       if (items.length === 0) return `${kind}({})`;
 
-      const inner: string = items
-        .map(([key, item]) => {
-          const desc = extractDescription(item);
-          const jsdoc = generateJSDocComment(desc, '  '.repeat(depth));
-          return `${jsdoc}${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`;
-        })
+      const inner = items
+        .map(([key, item]) => formatObjectProperty(key, item, depth))
         .join('');
       return `${kind}({\n${inner}${'  '.repeat(depth - 1)}})`;
     }
