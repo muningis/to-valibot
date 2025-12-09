@@ -1,6 +1,55 @@
 import type { AnyNode } from '../schema-nodes.ts';
 
 /**
+ * Extracts description from a node if it has one.
+ * Descriptions are stored as ActionNodeDescription inside MethodNodePipe.
+ * For optional nodes, we also check inside the wrapped value.
+ *
+ * @param node - The node to extract description from
+ *
+ * @returns The description string or undefined if not found
+ */
+export function extractDescription(node: AnyNode): string | undefined {
+  if (node.name === 'pipe') {
+    const descAction = node.value.find((n) => n.name === 'description');
+    if (descAction && 'value' in descAction) {
+      return descAction.value as string;
+    }
+  }
+  // Also check inside optional nodes
+  if (node.name === 'optional' && node.value) {
+    return extractDescription(node.value);
+  }
+  return undefined;
+}
+
+/**
+ * Generates a JSDoc comment for a description
+ *
+ * @param description - The description text
+ * @param indent - The indentation string (default: '')
+ *
+ * @returns The formatted JSDoc comment or empty string if no description
+ */
+export function generateJSDocComment(
+  description: string | undefined,
+  indent = ''
+): string {
+  if (!description) return '';
+
+  // Handle multiline descriptions
+  if (description.includes('\n')) {
+    const lines = description.split('\n');
+    const formattedLines = lines
+      .map((line) => `${indent} * ${line}`)
+      .join('\n');
+    return `${indent}/**\n${formattedLines}\n${indent} */\n`;
+  }
+
+  return `${indent}/** ${description} */\n`;
+}
+
+/**
  * Generates Valibot schema code from an AST node
  *
  * @param node - The schema node to generate code from
@@ -65,10 +114,11 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
           return `objectWithRest({}, ${generateNodeCode(withRest, depth)})`;
 
         const inner: string = items
-          .map(
-            ([key, item]) =>
-              `${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`
-          )
+          .map(([key, item]) => {
+            const desc = extractDescription(item);
+            const jsdoc = generateJSDocComment(desc, '  '.repeat(depth));
+            return `${jsdoc}${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`;
+          })
           .join('');
         return `objectWithRest({\n${inner}${'  '.repeat(depth - 1)}},\n${'  '.repeat(depth - 1)}${generateNodeCode(withRest, depth)})`;
       }
@@ -77,10 +127,11 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
       if (items.length === 0) return `${kind}({})`;
 
       const inner: string = items
-        .map(
-          ([key, item]) =>
-            `${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`
-        )
+        .map(([key, item]) => {
+          const desc = extractDescription(item);
+          const jsdoc = generateJSDocComment(desc, '  '.repeat(depth));
+          return `${jsdoc}${'  '.repeat(depth)}${key}: ${generateNodeCode(item, depth + 1)},\n`;
+        })
         .join('');
       return `${kind}({\n${inner}${'  '.repeat(depth - 1)}})`;
     }

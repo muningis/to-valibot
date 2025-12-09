@@ -15,7 +15,11 @@ import type { AnyNode } from '../schema-nodes.ts';
 import type { JSONSchema, JSONSchemaObject } from '../types.ts';
 import { findAndHandleCircularReferences } from '../utils/circular-refs.ts';
 import { topologicalSort } from '../utils/topological-sort.ts';
-import { generateSchemaCode } from './code-generator.ts';
+import {
+  extractDescription,
+  generateJSDocComment,
+  generateSchemaCode,
+} from './code-generator.ts';
 import { customRules, type CustomRules } from './constants.ts';
 import { SchemaParser } from './parser.ts';
 import { generateSchemaTypeDeclaration } from './type-generator.ts';
@@ -279,6 +283,8 @@ class ValibotGenerator {
     for (const [schemaName, schemaNode] of sortedSchemas) {
       output.push('\n\n');
       const schemaCode = generateSchemaCode(schemaNode);
+      const description = extractDescription(schemaNode);
+      const jsdoc = generateJSDocComment(description);
       if (
         selfReferencing.includes(schemaName) ||
         schemaName in circularReferences
@@ -292,11 +298,14 @@ class ValibotGenerator {
             : '';
         output.push(`export type ${typeName} = ${typeDeclaration}`, '\n\n');
         output.push(
-          `export const ${schemaName}${typeAnnotation} = ${schemaCode};`,
+          `${jsdoc}export const ${schemaName}${typeAnnotation} = ${schemaCode};`,
           '\n'
         );
       } else {
-        output.push(`export const ${schemaName} = ${schemaCode};`, '\n\n');
+        output.push(
+          `${jsdoc}export const ${schemaName} = ${schemaCode};`,
+          '\n\n'
+        );
         output.push(
           `export type ${schemaName.replace(/Schema/, '')} = InferOutput<typeof ${schemaName}>;\n`
         );
