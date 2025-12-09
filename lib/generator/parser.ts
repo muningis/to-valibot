@@ -204,14 +204,18 @@ export class SchemaParser {
         );
 
         // If there are sibling properties, create an object schema and include it
-        if (allOfSchema.properties && Object.keys(allOfSchema.properties).length > 0) {
+        if (
+          allOfSchema.properties &&
+          Object.keys(allOfSchema.properties).length > 0
+        ) {
           const objectSchema: JSONSchemaObject = {
             type: 'object',
             properties: allOfSchema.properties,
             required: allOfRequired,
           };
           if (allOfSchema.additionalProperties !== undefined) {
-            objectSchema.additionalProperties = allOfSchema.additionalProperties;
+            objectSchema.additionalProperties =
+              allOfSchema.additionalProperties;
           }
           const siblingObject = this.parseObjectType(objectSchema, true, meta);
           allOfItems.push(siblingObject);
