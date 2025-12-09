@@ -70,6 +70,8 @@ interface JSONSchemaObject extends JSONSchemaBase<object> {
 interface JSONSchemaAllOf extends JSONSchemaBase<never> {
   allOf: JSONSchema[];
   required?: string[];
+  properties?: Record<string, JSONSchema>;
+  additionalProperties?: boolean | JSONSchema;
 }
 
 interface JSONSchemaCombined extends JSONSchemaBase<never> {

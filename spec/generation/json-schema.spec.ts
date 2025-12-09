@@ -219,4 +219,16 @@ describe('should generate valibot schemas from JSON Schemas', () => {
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(prefixItemsNestedOutput.split('\n'));
   });
+
+  it('should parse JSON Schema with allOf and sibling properties', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/allof-with-properties-schema.json'
+    );
+    const allOfWithPropertiesOutput = await getFileContents(
+      'spec/generation/fixtures/output/allof-with-properties-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(allOfWithPropertiesOutput.split('\n'));
+  });
 });

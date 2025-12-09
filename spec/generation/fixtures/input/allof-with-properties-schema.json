@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "AllOf With Properties",
+  "definitions": {
+    "BaseEntity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "createdAt"]
+    },
+    "EntityDetails": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": ["name"]
+    }
+  },
+  "properties": {
+    "simpleEntity": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseEntity"
+        }
+      ],
+      "properties": {
+        "details": {
+          "$ref": "#/definitions/EntityDetails"
+        }
+      },
+      "required": ["details"]
+    },
+    "extendedEntity": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseEntity"
+        },
+        {
+          "$ref": "#/definitions/EntityDetails"
+        }
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["status"]
+    },
+    "strictExtendedEntity": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseEntity"
+        }
+      ],
+      "properties": {
+        "extra": {
+          "type": "string"
+        }
+      },
+      "required": ["extra"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["simpleEntity", "extendedEntity", "strictExtendedEntity"]
+}
