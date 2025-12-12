@@ -31,5 +31,3 @@ jobs:
       - name: Publish to-valibot
         run: pnpm publish --provenance --access public --no-git-checks
         continue-on-error: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
