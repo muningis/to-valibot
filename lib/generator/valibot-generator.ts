@@ -21,8 +21,12 @@ import {
   generateSchemaCode,
 } from './code-generator.ts';
 import { customRules, type CustomRules } from './constants.ts';
-import { SchemaParser } from './parser.ts';
+import { type ParserOptions, SchemaParser } from './parser.ts';
 import { generateSchemaTypeDeclaration } from './type-generator.ts';
+
+export interface ValibotGeneratorOptions {
+  optionalAsNullable: boolean;
+}
 
 const OpenAPISchema = object({
   info: object({
@@ -88,20 +92,33 @@ class ValibotGenerator {
 
   constructor(
     content: string,
-    format: 'openapi-json' | 'openapi-yaml' | 'json'
+    format: 'openapi-json' | 'openapi-yaml' | 'json',
+    options?: ValibotGeneratorOptions
   );
-  constructor(content: object, format: 'openapi-json' | 'json');
+  constructor(
+    content: object,
+    format: 'openapi-json' | 'json',
+    options?: ValibotGeneratorOptions
+  );
   constructor(
     content: string | object,
-    format: 'openapi-json' | 'openapi-yaml' | 'json'
+    format: 'openapi-json' | 'openapi-yaml' | 'json',
+    options?: ValibotGeneratorOptions
   ) {
+    const parserOptions: ParserOptions = {
+      optionalAsNullable: options?.optionalAsNullable ?? false,
+    };
+
     // Initialize parser with shared context
-    this.parser = new SchemaParser({
-      refs: this.refs,
-      schemas: this.schemas,
-      dependsOn: this.dependsOn,
-      currentSchema: null,
-    });
+    this.parser = new SchemaParser(
+      {
+        refs: this.refs,
+        schemas: this.schemas,
+        dependsOn: this.dependsOn,
+        currentSchema: null,
+      },
+      parserOptions
+    );
 
     switch (format) {
       case 'openapi-json': {
