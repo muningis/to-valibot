@@ -4,6 +4,13 @@ import { slugify } from './utils/basic.ts';
 
 interface GeneratorOptions {
   outDir: string;
+  /**
+   * When true, non-required fields will be converted to `union([schema, null()])`
+   * instead of `optional(schema)`.
+   *
+   * @default false
+   */
+  optionalAsNullable?: boolean;
 }
 
 type GenerateOptions =
@@ -24,14 +31,19 @@ const valibotGenerator = (
   options: GeneratorOptions
 ): ValibotGeneratorReturn => {
   const generate = async (opt: GenerateOptions): Promise<void> => {
+    const generatorOptions = {
+      optionalAsNullable: options.optionalAsNullable ?? false,
+    };
+
     if ('schemas' in opt && Array.isArray(opt.schemas)) {
       for (const schema of opt.schemas) {
         const schemaCode =
           typeof schema === 'string'
-            ? new ValibotGenerator(schema, opt.format)
+            ? new ValibotGenerator(schema, opt.format, generatorOptions)
             : new ValibotGenerator(
                 schema,
-                opt.format as 'openapi-json' | 'json'
+                opt.format as 'openapi-json' | 'json',
+                generatorOptions
               );
 
         const code = schemaCode.generate();
@@ -43,7 +55,8 @@ const valibotGenerator = (
       for (const [key, schema] of Object.entries(opt.schemas)) {
         const schemaCode = new ValibotGenerator(
           schema,
-          opt.format as 'openapi-json' | 'json'
+          opt.format as 'openapi-json' | 'json',
+          generatorOptions
         );
 
         const code = schemaCode.generate();
@@ -54,10 +67,11 @@ const valibotGenerator = (
     } else if ('schema' in opt) {
       const schemaCode =
         typeof opt.schema === 'string'
-          ? new ValibotGenerator(opt.schema, opt.format)
+          ? new ValibotGenerator(opt.schema, opt.format, generatorOptions)
           : new ValibotGenerator(
               opt.schema,
-              opt.format as 'openapi-json' | 'json'
+              opt.format as 'openapi-json' | 'json',
+              generatorOptions
             );
 
       const code = schemaCode.generate();

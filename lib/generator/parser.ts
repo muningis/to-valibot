@@ -72,15 +72,38 @@ export interface ParserContext {
   currentSchema: string | null;
 }
 
+export interface ParserOptions {
+  optionalAsNullable: boolean;
+}
+
 export interface ParseMeta {
   parentRequired?: string[];
 }
 
 export class SchemaParser {
   private context: ParserContext;
+  private options: ParserOptions;
 
-  constructor(context: ParserContext) {
+  constructor(context: ParserContext, options: ParserOptions) {
     this.context = context;
+    this.options = options;
+  }
+
+  /**
+   * Wraps a node as optional or nullable based on the optionalAsNullable option.
+   * When optionalAsNullable is true, returns union([value, null()]).
+   * Otherwise, returns optional(value) with optional default.
+   *
+   * @param value - The schema node to wrap
+   * @param defaultValue - Optional default value for the optional wrapper
+   *
+   * @returns The wrapped node (union with null or optional)
+   */
+  private wrapAsNonRequired(value: AnyNode, defaultValue?: unknown): AnyNode {
+    if (this.options.optionalAsNullable) {
+      return schemaNodeUnion({ value: [value, schemaNodeNull()] });
+    }
+    return schemaNodeOptional({ value, default: defaultValue });
   }
 
   get currentSchema(): string | null {
@@ -152,13 +175,10 @@ export class SchemaParser {
       this.context.dependsOn[this.currentSchema!]!.push(
         appendSchema(capitalize(schemaName))
       );
-      return required
-        ? schemaNodeReference({ ref: capitalize(appendSchema(schemaName)) })
-        : schemaNodeOptional({
-            value: schemaNodeReference({
-              ref: capitalize(appendSchema(schemaName)),
-            }),
-          });
+      const refNode = schemaNodeReference({
+        ref: capitalize(appendSchema(schemaName)),
+      });
+      return required ? refNode : this.wrapAsNonRequired(refNode);
     } else if ('const' in schema) {
       return schemaNodeConst({
         value: schema.const as string | number | boolean,
@@ -259,8 +279,7 @@ export class SchemaParser {
 
     let value: AnyNode = schemaNodeUnion({ value: content });
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
     return value;
   }
 
@@ -377,8 +396,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value: value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
 
     return value;
   }
@@ -413,8 +431,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
 
     return value;
   }
@@ -483,8 +500,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
 
     return value;
   }
@@ -562,7 +578,7 @@ export class SchemaParser {
     }
 
     if (!required) {
-      value = schemaNodeOptional({ value, default: schema.default });
+      value = this.wrapAsNonRequired(value, schema.default);
     }
 
     return value;
@@ -584,8 +600,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
     return value;
   }
 
@@ -605,8 +620,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
     return value;
   }
 
@@ -679,8 +693,7 @@ export class SchemaParser {
     }
 
     if (actions.length) value = methodPipe(value, actions);
-    if (!required)
-      value = schemaNodeOptional({ value, default: schema.default });
+    if (!required) value = this.wrapAsNonRequired(value, schema.default);
 
     return value;
   }

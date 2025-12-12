@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnumNullableTest",
+  "type": "object",
+  "properties": {
+    "requiredStatus": {
+      "type": "string",
+      "enum": ["active", "inactive"]
+    },
+    "optionalStatus": {
+      "type": "string",
+      "enum": ["pending", "complete"]
+    }
+  },
+  "required": ["requiredStatus"]
+}
