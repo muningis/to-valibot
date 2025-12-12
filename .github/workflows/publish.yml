@@ -29,4 +29,4 @@ jobs:
       - name: Build to-valibot
         run: pnpm build
       - name: Publish to-valibot
-        run: pnpm publish
+        run: npm publish --access public --provenance
