@@ -26,4 +26,16 @@ describe('should generate valibot schemas from OpenAPI json declaration file', (
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(complexSchema.split('\n'));
   });
+
+  it('should handle allOf with type: "object" at same level', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/openapi-allof-with-type.json'
+    );
+    const expectedOutput = await getFileContents(
+      'spec/generation/fixtures/output/openapi-allof-with-type.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'openapi-json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(expectedOutput.split('\n'));
+  });
 });
