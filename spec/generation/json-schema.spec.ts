@@ -243,4 +243,40 @@ describe('should generate valibot schemas from JSON Schemas', () => {
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(optionalLogicalOperatorsOutput.split('\n'));
   });
+
+  it('should parse JSON Schema with root-level allOf and sibling properties', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/root-allof-with-properties-schema.json'
+    );
+    const rootAllOfWithPropertiesOutput = await getFileContents(
+      'spec/generation/fixtures/output/root-allof-with-properties-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(rootAllOfWithPropertiesOutput.split('\n'));
+  });
+
+  it('should parse JSON Schema with root-level allOf only (no sibling properties)', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/root-allof-only-schema.json'
+    );
+    const rootAllOfOnlyOutput = await getFileContents(
+      'spec/generation/fixtures/output/root-allof-only-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(rootAllOfOnlyOutput.split('\n'));
+  });
+
+  it('should parse JSON Schema with definitions containing allOf and sibling properties', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/definitions-with-allof-schema.json'
+    );
+    const definitionsWithAllOfOutput = await getFileContents(
+      'spec/generation/fixtures/output/definitions-with-allof-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(definitionsWithAllOfOutput.split('\n'));
+  });
 });

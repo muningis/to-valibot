@@ -61,8 +61,10 @@ interface ParsedJSONSchema {
   description?: string | undefined;
   definitions?: Record<string, JSONSchema> | undefined;
   $defs?: Record<string, JSONSchema> | undefined;
-  properties: Record<string, JSONSchemaObject>;
+  properties?: Record<string, JSONSchemaObject> | undefined;
   required?: string[] | undefined;
+  allOf?: JSONSchema[] | undefined;
+  additionalProperties?: boolean | JSONSchema | undefined;
 }
 
 export interface ParserContext {
@@ -140,12 +142,39 @@ export class SchemaParser {
     this.context.dependsOn[this.currentSchema] = [];
     this.context.refs.set(`#/definitions/${name}`, name);
 
-    this.context.schemas[name] = this.parseObjectType({
-      type: 'object',
-      properties: values.properties,
-      required: values.required ?? [],
-      description: values.description,
-    });
+    // Check if root schema has allOf with sibling properties
+    if (values.allOf && values.allOf.length > 0) {
+      const allOfRequired = values.required ?? [];
+      const allOfItems = values.allOf.map((item) =>
+        this.parseSchema(item, true, { parentRequired: allOfRequired })
+      );
+
+      // If there are sibling properties, create an object schema and include it
+      if (values.properties && Object.keys(values.properties).length > 0) {
+        const objectSchema: JSONSchemaObject = {
+          type: 'object',
+          properties: values.properties,
+          required: allOfRequired,
+          description: values.description,
+        };
+        if (values.additionalProperties !== undefined) {
+          objectSchema.additionalProperties = values.additionalProperties;
+        }
+        const siblingObject = this.parseObjectType(objectSchema, true);
+        allOfItems.push(siblingObject);
+      }
+
+      this.context.schemas[name] = schemaNodeAllOf({
+        value: allOfItems,
+      });
+    } else {
+      this.context.schemas[name] = this.parseObjectType({
+        type: 'object',
+        properties: values.properties ?? {},
+        required: values.required ?? [],
+        description: values.description,
+      });
+    }
   }
 
   parseOpenAPI(values: Record<string, JSONSchema>): void {
