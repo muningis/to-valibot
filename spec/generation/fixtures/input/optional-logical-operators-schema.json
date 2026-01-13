@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Optional Logical Operators Schema",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "optionalOneOf": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "circle" },
+            "radius": { "type": "number" }
+          },
+          "required": ["type", "radius"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "rectangle" },
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          },
+          "required": ["type", "width", "height"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "optionalAnyOf": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "number" }
+      ]
+    },
+    "optionalAllOf": {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "age": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "optionalNot": {
+      "not": {
+        "type": "object",
+        "properties": {
+          "forbidden": { "const": true }
+        }
+      }
+    }
+  },
+  "required": ["id"]
+}

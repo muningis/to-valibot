@@ -92,11 +92,22 @@ export function generateNodeType(node: AnyNode, depth = 1): string {
     }
     case 'const':
       return JSON.stringify(node.value);
-    case 'not':
-    case 'allOf':
+    case 'allOf': {
+      const inner = node.value
+        .map((item) => generateNodeType(item, depth))
+        .join(' & ');
+      return `(${inner})`;
+    }
     case 'anyOf':
-    case 'oneOf':
-      throw new Error(`${node.name} not yet implemented`);
+    case 'oneOf': {
+      const inner = node.value
+        .map((item) => generateNodeType(item, depth))
+        .join(' | ');
+      return `(${inner})`;
+    }
+    case 'not':
+      // TypeScript cannot express "any type except X", so we use unknown
+      return 'unknown';
     case 'optional': {
       throw new Error('Top-level optional is unsupported');
     }
