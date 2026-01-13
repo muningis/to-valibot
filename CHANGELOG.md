@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2025-01-13
+
+### Fixed
+
+- **Handle `allOf` with `type: "object"` at same level** ([#13](https://github.com/muningis/to-valibot/pull/13)) - Fixed parsing of OpenAPI schemas where `allOf` appears alongside `type: "object"` at the same level. Previously, the `allOf` was ignored when `type: "object"` was present as a sibling property.
+
 ## [1.2.0] - 2025-01-13
 
 ### Added
