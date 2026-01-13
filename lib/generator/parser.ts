@@ -241,21 +241,29 @@ export class SchemaParser {
           allOfItems.push(siblingObject);
         }
 
-        return schemaNodeAllOf({
+        let value: AnyNode = schemaNodeAllOf({
           value: allOfItems,
         });
+        if (!required) value = this.wrapAsNonRequired(value);
+        return value;
       } else if ('oneOf' in schema) {
-        return schemaNodeOneOf({
+        let value: AnyNode = schemaNodeOneOf({
           value: schema.oneOf.map((item) => this.parseSchema(item, true, meta)),
         });
+        if (!required) value = this.wrapAsNonRequired(value);
+        return value;
       } else if ('anyOf' in schema) {
-        return schemaNodeAnyOf({
+        let value: AnyNode = schemaNodeAnyOf({
           value: schema.anyOf.map((item) => this.parseSchema(item, true, meta)),
         });
+        if (!required) value = this.wrapAsNonRequired(value);
+        return value;
       } else if ('not' in schema) {
-        return schemaNodeNot({
+        let value: AnyNode = schemaNodeNot({
           value: this.parseSchema(schema.not, true, meta),
         });
+        if (!required) value = this.wrapAsNonRequired(value);
+        return value;
       }
       throw new Error(`Unsupported schema: ${JSON.stringify(schema)}`);
     }

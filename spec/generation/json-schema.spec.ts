@@ -231,4 +231,16 @@ describe('should generate valibot schemas from JSON Schemas', () => {
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(allOfWithPropertiesOutput.split('\n'));
   });
+
+  it('should parse JSON Schema with optional logical operators (oneOf, anyOf, allOf, not)', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/optional-logical-operators-schema.json'
+    );
+    const optionalLogicalOperatorsOutput = await getFileContents(
+      'spec/generation/fixtures/output/optional-logical-operators-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(optionalLogicalOperatorsOutput.split('\n'));
+  });
 });
