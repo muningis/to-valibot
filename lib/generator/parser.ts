@@ -212,6 +212,40 @@ export class SchemaParser {
       return schemaNodeConst({
         value: schema.const as string | number | boolean,
       });
+    } else if ('allOf' in schema) {
+      // Handle allOf before type check, as allOf can coexist with type: "object"
+      const allOfSchema = schema as JSONSchemaAllOf;
+      const allOfRequired = allOfSchema.required ?? [];
+      const combinedRequired = [
+        ...allOfRequired,
+        ...(meta?.parentRequired ?? []),
+      ];
+      const allOfItems = schema.allOf.map((item) =>
+        this.parseSchema(item, true, { parentRequired: combinedRequired })
+      );
+
+      // If there are sibling properties, create an object schema and include it
+      if (
+        allOfSchema.properties &&
+        Object.keys(allOfSchema.properties).length > 0
+      ) {
+        const objectSchema: JSONSchemaObject = {
+          type: 'object',
+          properties: allOfSchema.properties,
+          required: allOfRequired,
+        };
+        if (allOfSchema.additionalProperties !== undefined) {
+          objectSchema.additionalProperties = allOfSchema.additionalProperties;
+        }
+        const siblingObject = this.parseObjectType(objectSchema, true, meta);
+        allOfItems.push(siblingObject);
+      }
+
+      let value: AnyNode = schemaNodeAllOf({
+        value: allOfItems,
+      });
+      if (!required) value = this.wrapAsNonRequired(value);
+      return value;
     } else if ('type' in schema) {
       switch (schema.type) {
         case 'string':
@@ -241,41 +275,7 @@ export class SchemaParser {
           );
       }
     } else {
-      if ('allOf' in schema) {
-        const allOfSchema = schema as JSONSchemaAllOf;
-        const allOfRequired = allOfSchema.required ?? [];
-        const combinedRequired = [
-          ...allOfRequired,
-          ...(meta?.parentRequired ?? []),
-        ];
-        const allOfItems = schema.allOf.map((item) =>
-          this.parseSchema(item, true, { parentRequired: combinedRequired })
-        );
-
-        // If there are sibling properties, create an object schema and include it
-        if (
-          allOfSchema.properties &&
-          Object.keys(allOfSchema.properties).length > 0
-        ) {
-          const objectSchema: JSONSchemaObject = {
-            type: 'object',
-            properties: allOfSchema.properties,
-            required: allOfRequired,
-          };
-          if (allOfSchema.additionalProperties !== undefined) {
-            objectSchema.additionalProperties =
-              allOfSchema.additionalProperties;
-          }
-          const siblingObject = this.parseObjectType(objectSchema, true, meta);
-          allOfItems.push(siblingObject);
-        }
-
-        let value: AnyNode = schemaNodeAllOf({
-          value: allOfItems,
-        });
-        if (!required) value = this.wrapAsNonRequired(value);
-        return value;
-      } else if ('oneOf' in schema) {
+      if ('oneOf' in schema) {
         let value: AnyNode = schemaNodeOneOf({
           value: schema.oneOf.map((item) => this.parseSchema(item, true, meta)),
         });

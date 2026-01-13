@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Test OpenAPI Schema",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "SomeComponentSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["name", "createdAt"]
+      },
+      "ExtendedSchema": {
+        "required": ["id"],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SomeComponentSchema"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "ExtendedWithSiblingProps": {
+        "required": ["id", "extra"],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SomeComponentSchema"
+          }
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "extra": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
