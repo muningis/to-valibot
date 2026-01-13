@@ -60,11 +60,20 @@ const JSONSchemaSchema = object({
       )
     )
   ),
-  properties: pipe(
-    any(),
-    check<Record<string, JSONSchemaObject>>(() => true)
+  properties: optional(
+    pipe(
+      any(),
+      check<Record<string, JSONSchemaObject>>(() => true)
+    )
   ),
   required: optional(array(string())),
+  allOf: optional(
+    pipe(
+      any(),
+      check<JSONSchema[]>(() => true)
+    )
+  ),
+  additionalProperties: optional(any()),
 });
 
 type JSONSchemaSchemaType = InferOutput<typeof JSONSchemaSchema>;
