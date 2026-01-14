@@ -26,6 +26,7 @@ import { generateSchemaTypeDeclaration } from './type-generator.ts';
 
 export interface ValibotGeneratorOptions {
   optionalAsNullable: boolean;
+  exportPosition: 'inline' | 'end';
 }
 
 const OpenAPISchema = object({
@@ -96,6 +97,7 @@ class ValibotGenerator {
   private dependsOn: Record<string, string[]> = {};
   private usedImports = new Set<string>();
   private customRulesUsed = new Set<CustomRules>();
+  private options: ValibotGeneratorOptions;
 
   private parser: SchemaParser;
 
@@ -114,8 +116,13 @@ class ValibotGenerator {
     format: 'openapi-json' | 'openapi-yaml' | 'json',
     options?: ValibotGeneratorOptions
   ) {
-    const parserOptions: ParserOptions = {
+    this.options = {
       optionalAsNullable: options?.optionalAsNullable ?? false,
+      exportPosition: options?.exportPosition ?? 'inline',
+    };
+
+    const parserOptions: ParserOptions = {
+      optionalAsNullable: this.options.optionalAsNullable,
     };
 
     // Initialize parser with shared context
@@ -306,36 +313,52 @@ class ValibotGenerator {
     }
 
     const sortedSchemas = topologicalSort(this.schemas, this.dependsOn);
+    const exportPrefix =
+      this.options.exportPosition === 'inline' ? 'export ' : '';
+    const schemaExports: string[] = [];
+    const typeExports: string[] = [];
+
     for (const [schemaName, schemaNode] of sortedSchemas) {
       output.push('\n\n');
       const schemaCode = generateSchemaCode(schemaNode);
       const description = extractDescription(schemaNode);
       const jsdoc = generateJSDocComment(description);
+      const typeName = schemaName.replace(/Schema/, '');
+
       if (
         selfReferencing.includes(schemaName) ||
         schemaName in circularReferences
       ) {
-        const typeName = schemaName.replace(/Schema/, '');
         const typeDeclaration = generateSchemaTypeDeclaration(schemaNode);
-        const typeAnnotation =
-          selfReferencing.includes(schemaName) ||
-          schemaName in circularReferences
-            ? `: GenericSchema<${typeName}>`
-            : '';
-        output.push(`export type ${typeName} = ${typeDeclaration}`, '\n\n');
+        const typeAnnotation = `: GenericSchema<${typeName}>`;
         output.push(
-          `${jsdoc}export const ${schemaName}${typeAnnotation} = ${schemaCode};`,
+          `${exportPrefix}type ${typeName} = ${typeDeclaration}`,
+          '\n\n'
+        );
+        output.push(
+          `${jsdoc}${exportPrefix}const ${schemaName}${typeAnnotation} = ${schemaCode};`,
           '\n'
         );
       } else {
         output.push(
-          `${jsdoc}export const ${schemaName} = ${schemaCode};`,
+          `${jsdoc}${exportPrefix}const ${schemaName} = ${schemaCode};`,
           '\n\n'
         );
         output.push(
-          `export type ${schemaName.replace(/Schema/, '')} = InferOutput<typeof ${schemaName}>;\n`
+          `${exportPrefix}type ${typeName} = InferOutput<typeof ${schemaName}>;\n`
         );
       }
+
+      if (this.options.exportPosition === 'end') {
+        schemaExports.push(schemaName);
+        typeExports.push(typeName);
+      }
+    }
+
+    if (this.options.exportPosition === 'end' && schemaExports.length > 0) {
+      output.push('\n');
+      output.push(`export type { ${typeExports.join(', ')} };\n`);
+      output.push(`export { ${schemaExports.join(', ')} };\n`);
     }
 
     return output.join('');
