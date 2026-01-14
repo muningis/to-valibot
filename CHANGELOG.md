@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2025-01-14
+
+### Added
+
+- **`headerBanner` option** ([#15](https://github.com/muningis/to-valibot/pull/15)) - New option to inject custom code at the beginning of generated output files. Useful for adding license headers, comments, or custom imports.
+
+- **`exportPosition` option** ([#16](https://github.com/muningis/to-valibot/pull/16)) - New option to control where export declarations appear in generated code. Allows choosing between inline exports or grouped exports at the end of the file.
+
 ## [1.3.0] - 2025-01-13
 
 ### Fixed
