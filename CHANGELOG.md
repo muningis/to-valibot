@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2025-01-14
+
+### Changed
+
+- **Use object merging instead of `intersect()` for `allOf` schemas** ([#18](https://github.com/muningis/to-valibot/pull/18)) - Refactored `allOf` schema generation to merge object properties directly instead of using Valibot's `intersect()`. This produces cleaner, more readable generated code and better aligns with how most `allOf` schemas are used in practice.
+
 ## [1.4.0] - 2025-01-14
 
 ### Added
