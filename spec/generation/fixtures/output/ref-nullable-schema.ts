@@ -1,4 +1,4 @@
-import { InferOutput, null, object, string, union } from "valibot";
+import { InferOutput, null_, object, string, union } from "valibot";
 
 
 export const AddressSchema = object({
@@ -12,7 +12,7 @@ export const RefNullableTestSchema = object({
   primaryAddress: AddressSchema,
   secondaryAddress: union([
     AddressSchema,
-    null(),
+    null_(),
   ]),
 });
 

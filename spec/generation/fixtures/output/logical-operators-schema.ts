@@ -1,4 +1,4 @@
-import { InferOutput, intersect, isoDateTime, literal, minLength, minValue, number, object, pipe, strictObject, string, union } from "valibot";
+import { InferOutput, isoDateTime, literal, minLength, minValue, number, object, pipe, strictObject, string, union } from "valibot";
 import { not } from "to-valibot/client";
 
 
@@ -10,17 +10,11 @@ export const LogicalOperatorsSchema = object({
       code: string(),
     }),
   ]),
-  allOfExample: intersect([
-    object({
-      id: string(),
-    }),
-    object({
-      name: string(),
-    }),
-    object({
-      age: pipe(number(), minValue(0)),
-    }),
-  ]),
+  allOfExample: object({
+    id: string(),
+    name: string(),
+    age: pipe(number(), minValue(0)),
+  }),
   oneOfExample: union([
     strictObject({
       type: literal("circle"),
@@ -43,16 +37,13 @@ export const LogicalOperatorsSchema = object({
       string(),
       number(),
     ]),
-    metadata: intersect([
+    metadata: pipe(object({
+      created: pipe(string(), isoDateTime()),
+    }), not(
       object({
-        created: pipe(string(), isoDateTime()),
+        deleted: literal(true),
       }),
-      not(
-        object({
-          deleted: literal(true),
-        }),
-      ),
-    ]),
+    )),
   }),
 });
 

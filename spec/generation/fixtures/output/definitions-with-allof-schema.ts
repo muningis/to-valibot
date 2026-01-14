@@ -1,4 +1,4 @@
-import { InferOutput, intersect, isoDateTime, object, optional, pipe, string } from "valibot";
+import { InferOutput, isoDateTime, object, optional, pipe, string } from "valibot";
 
 
 export const BaseEntitySchema = object({
@@ -9,13 +9,11 @@ export const BaseEntitySchema = object({
 export type BaseEntity = InferOutput<typeof BaseEntitySchema>;
 
 
-export const ExtendedEntitySchema = intersect([
-  BaseEntitySchema,
-  object({
-    name: string(),
-    description: optional(string()),
-  }),
-]);
+export const ExtendedEntitySchema = object({
+  ...BaseEntitySchema.entries,
+  name: string(),
+  description: optional(string()),
+});
 
 export type ExtendedEntity = InferOutput<typeof ExtendedEntitySchema>;
 

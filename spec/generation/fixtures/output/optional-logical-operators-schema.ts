@@ -1,4 +1,4 @@
-import { InferOutput, intersect, literal, number, object, optional, pipe, strictObject, string, union, uuid } from "valibot";
+import { InferOutput, literal, number, object, optional, pipe, strictObject, string, union, uuid } from "valibot";
 import { not } from "to-valibot/client";
 
 
@@ -19,14 +19,10 @@ export const OptionalLogicalOperatorsSchema = object({
     string(),
     number(),
   ])),
-  optionalAllOf: optional(intersect([
-    object({
-      name: optional(string()),
-    }),
-    object({
-      age: optional(number()),
-    }),
-  ])),
+  optionalAllOf: optional(object({
+    name: optional(string()),
+    age: optional(number()),
+  })),
   optionalNot: optional(not(
     object({
       forbidden: literal(true),

@@ -1,4 +1,4 @@
-import { InferOutput, intersect, object, string } from "valibot";
+import { InferOutput, object, string } from "valibot";
 
 
 export const BaseEntitySchema = object({
@@ -15,9 +15,9 @@ export const NamedEntitySchema = object({
 export type NamedEntity = InferOutput<typeof NamedEntitySchema>;
 
 
-export const RootAllOfOnlySchema = intersect([
-  BaseEntitySchema,
-  NamedEntitySchema,
-]);
+export const RootAllOfOnlySchema = object({
+  ...BaseEntitySchema.entries,
+  ...NamedEntitySchema.entries,
+});
 
 export type RootAllOfOnly = InferOutput<typeof RootAllOfOnlySchema>;

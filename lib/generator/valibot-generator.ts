@@ -214,7 +214,18 @@ class ValibotGenerator {
             break;
           }
           case 'allOf': {
-            this.usedImports.add('intersect');
+            // allOf uses object merging, so add the appropriate object type
+            this.usedImports.add(node.objectType);
+            // If allOf has non-object constraints, we'll need pipe
+            const hasConstraints = node.value.some(
+              (item) =>
+                item.name !== '$ref' &&
+                item.name !== 'object' &&
+                !(item.name === 'pipe' && item.value[0]?.name === 'object')
+            );
+            if (hasConstraints) {
+              this.usedImports.add('pipe');
+            }
             break;
           }
           case 'const': {
@@ -226,6 +237,9 @@ class ValibotGenerator {
             break;
           }
         }
+      } else if (node.name === 'null') {
+        // Valibot exports null as null_ since null is a reserved keyword
+        this.usedImports.add('null_');
       } else {
         // above if statement with `node.name in customRules` does not help
         // inferring that those strings should be omitted
@@ -287,9 +301,14 @@ class ValibotGenerator {
           node.value.forEach((v) => visit(v, schemaName));
           break;
         case 'anyOf':
-        case 'allOf':
         case 'oneOf':
           node.value.forEach((v) => visit(v, schemaName));
+          break;
+        case 'allOf':
+          node.value.forEach((v) => visit(v, schemaName));
+          if (node.withRest) {
+            visit(node.withRest, schemaName);
+          }
           break;
       }
     };

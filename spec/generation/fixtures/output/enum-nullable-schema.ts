@@ -1,4 +1,4 @@
-import { InferOutput, literal, null, object, union } from "valibot";
+import { InferOutput, literal, null_, object, union } from "valibot";
 
 
 export const EnumNullableTestSchema = object({
@@ -11,7 +11,7 @@ export const EnumNullableTestSchema = object({
       literal("pending"),
       literal("complete"),
     ]),
-    null(),
+    null_(),
   ]),
 });
 

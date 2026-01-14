@@ -1,4 +1,4 @@
-import { InferOutput, array, intersect, isoDateTime, literal, object, optional, pipe, strictObject, string, union } from "valibot";
+import { InferOutput, array, isoDateTime, literal, object, optional, pipe, strictObject, string, union } from "valibot";
 
 
 export const BaseEntitySchema = object({
@@ -18,29 +18,23 @@ export type EntityDetails = InferOutput<typeof EntityDetailsSchema>;
 
 
 export const AllOfWithPropertiesSchema = object({
-  simpleEntity: intersect([
-    BaseEntitySchema,
-    object({
-      details: EntityDetailsSchema,
-    }),
-  ]),
-  extendedEntity: intersect([
-    BaseEntitySchema,
-    EntityDetailsSchema,
-    object({
-      status: union([
-        literal("active"),
-        literal("inactive"),
-      ]),
-      tags: optional(array(string())),
-    }),
-  ]),
-  strictExtendedEntity: intersect([
-    BaseEntitySchema,
-    strictObject({
-      extra: string(),
-    }),
-  ]),
+  simpleEntity: object({
+    ...BaseEntitySchema.entries,
+    details: EntityDetailsSchema,
+  }),
+  extendedEntity: object({
+    ...BaseEntitySchema.entries,
+    ...EntityDetailsSchema.entries,
+    status: union([
+      literal("active"),
+      literal("inactive"),
+    ]),
+    tags: optional(array(string())),
+  }),
+  strictExtendedEntity: strictObject({
+    ...BaseEntitySchema.entries,
+    extra: string(),
+  }),
 });
 
 export type AllOfWithProperties = InferOutput<typeof AllOfWithPropertiesSchema>;

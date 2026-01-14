@@ -1,32 +1,32 @@
-import { InferOutput, array, boolean, null, number, object, string, union } from "valibot";
+import { InferOutput, array, boolean, null_, number, object, string, union } from "valibot";
 
 
 export const OptionalAsNullableTestSchema = object({
   requiredField: string(),
   optionalString: union([
     string(),
-    null(),
+    null_(),
   ]),
   optionalNumber: union([
     number(),
-    null(),
+    null_(),
   ]),
   optionalBoolean: union([
     boolean(),
-    null(),
+    null_(),
   ]),
   optionalArray: union([
     array(string()),
-    null(),
+    null_(),
   ]),
   optionalObject: union([
     object({
       nested: union([
         string(),
-        null(),
+        null_(),
       ]),
     }),
-    null(),
+    null_(),
   ]),
 });
 

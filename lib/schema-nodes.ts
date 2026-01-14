@@ -359,6 +359,8 @@ const schemaNodeUnion: NodeFactory<SchemaNodeUnion> = (props) => ({
 
 type SchemaNodeAllOf = SchemaNodeBase<'allOf'> & {
   value: AnyNode[];
+  objectType: 'object' | 'strictObject' | 'objectWithRest';
+  withRest?: AnyNode;
 };
 const schemaNodeAllOf: NodeFactory<SchemaNodeAllOf> = (props) => ({
   name: 'allOf',
