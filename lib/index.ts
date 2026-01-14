@@ -11,6 +11,14 @@ interface GeneratorOptions {
    * @default false
    */
   optionalAsNullable?: boolean;
+  /**
+   * Controls where export declarations are placed in the generated code.
+   * - `'inline'`: Exports are placed inline with declarations (e.g., `export const SchemaName = ...`)
+   * - `'end'`: Exports are collected at the end of the file (e.g., `export { SchemaName }; export type { TypeName }`)
+   *
+   * @default 'inline'
+   */
+  exportPosition?: 'inline' | 'end';
 }
 
 type GenerateOptions =
@@ -33,6 +41,7 @@ const valibotGenerator = (
   const generate = async (opt: GenerateOptions): Promise<void> => {
     const generatorOptions = {
       optionalAsNullable: options.optionalAsNullable ?? false,
+      exportPosition: options.exportPosition ?? 'inline',
     };
 
     if ('schemas' in opt && Array.isArray(opt.schemas)) {
