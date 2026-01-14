@@ -164,9 +164,29 @@ export class SchemaParser {
         allOfItems.push(siblingObject);
       }
 
-      this.context.schemas[name] = schemaNodeAllOf({
+      // Determine object type based on additionalProperties
+      const objectType =
+        values.additionalProperties === false
+          ? 'strictObject'
+          : typeof values.additionalProperties === 'object'
+            ? 'objectWithRest'
+            : 'object';
+
+      const allOfProps: {
+        value: AnyNode[];
+        objectType: 'object' | 'strictObject' | 'objectWithRest';
+        withRest?: AnyNode;
+      } = {
         value: allOfItems,
-      });
+        objectType,
+      };
+      if (objectType === 'objectWithRest' && values.additionalProperties) {
+        allOfProps.withRest = this.parseSchema(
+          values.additionalProperties as object,
+          true
+        );
+      }
+      this.context.schemas[name] = schemaNodeAllOf(allOfProps);
     } else {
       this.context.schemas[name] = this.parseObjectType({
         type: 'object',
@@ -241,9 +261,31 @@ export class SchemaParser {
         allOfItems.push(siblingObject);
       }
 
-      let value: AnyNode = schemaNodeAllOf({
+      // Determine object type based on additionalProperties
+      const objectType =
+        allOfSchema.additionalProperties === false
+          ? 'strictObject'
+          : typeof allOfSchema.additionalProperties === 'object'
+            ? 'objectWithRest'
+            : 'object';
+
+      const allOfProps: {
+        value: AnyNode[];
+        objectType: 'object' | 'strictObject' | 'objectWithRest';
+        withRest?: AnyNode;
+      } = {
         value: allOfItems,
-      });
+        objectType,
+      };
+      if (objectType === 'objectWithRest' && allOfSchema.additionalProperties) {
+        allOfProps.withRest = this.parseSchema(
+          allOfSchema.additionalProperties as object,
+          true,
+          meta
+        );
+      }
+
+      let value: AnyNode = schemaNodeAllOf(allOfProps);
       if (!required) value = this.wrapAsNonRequired(value);
       return value;
     } else if ('type' in schema) {

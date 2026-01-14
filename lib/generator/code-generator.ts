@@ -125,7 +125,7 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
     case 'examples':
       return `examples(${JSON.stringify(node.value)})`;
     case 'null':
-      return 'null()';
+      return 'null_()';
     case 'object': {
       const kind = node.type;
       const withRest =
@@ -194,13 +194,54 @@ export function generateNodeCode(node: AnyNode, depth = 1): string {
     case 'const':
       return `literal(${JSON.stringify(node.value)})`;
     case 'allOf': {
-      const inner = node.value
-        .map(
-          (item) =>
-            `${'  '.repeat(depth)}${generateNodeCode(item, depth + 1)},\n`
-        )
-        .join('');
-      return `intersect([\n${inner}${'  '.repeat(depth - 1)}])`;
+      const kind = node.objectType;
+      const entries: string[] = [];
+      const constraints: string[] = [];
+
+      for (const item of node.value) {
+        if (item.name === '$ref') {
+          // For refs, spread their entries
+          if (item.lazy) {
+            entries.push(
+              `${'  '.repeat(depth)}...lazy(() => ${item.ref}).entries,\n`
+            );
+          } else {
+            entries.push(`${'  '.repeat(depth)}...${item.ref}.entries,\n`);
+          }
+        } else if (item.name === 'object') {
+          // For inline objects, extract their properties directly
+          for (const [key, propNode] of Object.entries(item.value)) {
+            entries.push(formatObjectProperty(key, propNode, depth));
+          }
+        } else if (item.name === 'pipe' && item.value[0]?.name === 'object') {
+          // Object wrapped in pipe (for descriptions, etc)
+          const objNode = item.value[0] as { value: Record<string, AnyNode> };
+          for (const [key, propNode] of Object.entries(objNode.value)) {
+            entries.push(formatObjectProperty(key, propNode, depth));
+          }
+        } else {
+          // Non-object nodes like not() are collected as constraints
+          constraints.push(generateNodeCode(item, depth));
+        }
+      }
+
+      const inner = entries.join('');
+      let objectCode: string;
+      if (kind === 'objectWithRest' && node.withRest) {
+        const rest = generateNodeCode(node.withRest, depth);
+        objectCode = `objectWithRest({\n${inner}${'  '.repeat(depth - 1)}},\n${'  '.repeat(depth - 1)}${rest})`;
+      } else if (inner === '') {
+        objectCode = `${kind}({})`;
+      } else {
+        objectCode = `${kind}({\n${inner}${'  '.repeat(depth - 1)}})`;
+      }
+
+      // If there are non-object constraints, wrap in pipe()
+      if (constraints.length > 0) {
+        return `pipe(${objectCode}, ${constraints.join(', ')})`;
+      }
+
+      return objectCode;
     }
     case 'anyOf':
     case 'oneOf': {
