@@ -27,6 +27,11 @@ import { generateSchemaTypeDeclaration } from './type-generator.ts';
 export interface ValibotGeneratorOptions {
   optionalAsNullable: boolean;
   exportPosition: 'inline' | 'end';
+  /**
+   * Optional code to inject at the beginning of the generated output.
+   * Useful for adding license headers, eslint-disable comments, or other preambles.
+   */
+  headerBanner?: string | undefined;
 }
 
 const OpenAPISchema = object({
@@ -119,6 +124,7 @@ class ValibotGenerator {
     this.options = {
       optionalAsNullable: options?.optionalAsNullable ?? false,
       exportPosition: options?.exportPosition ?? 'inline',
+      headerBanner: options?.headerBanner,
     };
 
     const parserOptions: ParserOptions = {
@@ -293,6 +299,14 @@ class ValibotGenerator {
     }
 
     const output: string[] = [];
+
+    if (this.options.headerBanner) {
+      output.push(this.options.headerBanner);
+      // Ensure proper spacing after the header banner
+      if (!this.options.headerBanner.endsWith('\n')) {
+        output.push('\n');
+      }
+    }
 
     const imports = [...this.usedImports.values()].sort((a, b) => {
       const aStartsWithUpper = /^[A-Z]/.test(a);

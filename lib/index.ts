@@ -19,6 +19,11 @@ interface GeneratorOptions {
    * @default 'inline'
    */
   exportPosition?: 'inline' | 'end';
+  /**
+   * Optional code to inject at the beginning of the generated output.
+   * Useful for adding license headers, eslint-disable comments, or other preambles.
+   */
+  headerBanner?: string;
 }
 
 type GenerateOptions =
@@ -42,6 +47,7 @@ const valibotGenerator = (
     const generatorOptions = {
       optionalAsNullable: options.optionalAsNullable ?? false,
       exportPosition: options.exportPosition ?? 'inline',
+      headerBanner: options.headerBanner,
     };
 
     if ('schemas' in opt && Array.isArray(opt.schemas)) {
