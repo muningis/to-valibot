@@ -140,3 +140,16 @@ Unit tests for utilities are colocated: `lib/utils/*.spec.ts`
 3. Add the rule name to the `customRules` array in `lib/generator/valibot-generator.ts`
 4. Use it in the appropriate parser method in `lib/generator/parser.ts` via `action<RuleName>()`
 5. Handle it in `lib/generator/code-generator.ts` (`generateNodeCode()`) to output the function call
+
+## Release Workflow
+
+Whenever a code change ships behavior visible to consumers (new feature, bug fix, parser support for additional schema syntax, etc.), open a follow-up release PR after the change PR is merged:
+
+1. Bump `package.json#version` using semver — new feature or new supported syntax → minor; bug fix only → patch.
+2. Add a `CHANGELOG.md` entry under a new version header (`## [X.Y.Z] - YYYY-MM-DD`) using the existing categories (`Added`, `Changed`, `Fixed`) and link the originating issue or PR.
+3. Commit as two separate commits, in this order:
+   - `chore: bump version to X.Y.Z`
+   - `docs: add changelog entry for vX.Y.Z`
+4. Open a separate PR for the bump (do not bundle it into the feature/fix PR).
+
+Pure-internal changes (refactors with no consumer-visible effect, CI tweaks, dev-only docs) skip this workflow.
