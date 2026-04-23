@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-04-23
+
+### Added
+
+- **Array-of-types syntax (`type: ["string", "null"]`)** ([#22](https://github.com/muningis/to-valibot/issues/22)) - Added support for JSON Schema Draft 6+'s array-of-types syntax, commonly emitted by OpenAPI 3.1 generators (springdoc, FastAPI, NestJS) to express nullable fields in place of the removed `nullable: true` keyword. Array types are lowered to a `union([...])` of each branch, so `type: ["string", "null"]` becomes `union([string(), null_()])`. Single-element arrays collapse to the lone branch. Previously, any occurrence of array-of-types would abort the whole run with `Error: Unsupported type`.
+
 ## [1.5.0] - 2025-01-14
 
 ### Changed
