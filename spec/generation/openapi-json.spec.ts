@@ -38,4 +38,16 @@ describe('should generate valibot schemas from OpenAPI json declaration file', (
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(expectedOutput.split('\n'));
   });
+
+  it('should parse OpenAPI 3.1 schema using type: ["string", "null"] for nullable fields', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/openapi-31-nullable.json'
+    );
+    const expectedOutput = await getFileContents(
+      'spec/generation/fixtures/output/openapi-31-nullable.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'openapi-json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(expectedOutput.split('\n'));
+  });
 });

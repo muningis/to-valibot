@@ -85,6 +85,18 @@ interface JSONSchemaRef {
   $ref: string;
 }
 
+interface JSONSchemaMultiType extends JSONSchemaBase<unknown> {
+  type: (
+    | 'string'
+    | 'number'
+    | 'integer'
+    | 'boolean'
+    | 'null'
+    | 'array'
+    | 'object'
+  )[];
+}
+
 type JSONSchema =
   | JSONSchemaString
   | JSONSchemaNumber
@@ -94,6 +106,7 @@ type JSONSchema =
   | JSONSchemaObject
   | JSONSchemaAllOf
   | JSONSchemaCombined
+  | JSONSchemaMultiType
   | JSONSchemaRef;
 
 export type {
@@ -106,5 +119,6 @@ export type {
   JSONSchemaObject,
   JSONSchemaAllOf,
   JSONSchemaCombined,
+  JSONSchemaMultiType,
   JSONSchemaRef,
 };

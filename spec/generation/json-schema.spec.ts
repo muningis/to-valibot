@@ -279,4 +279,16 @@ describe('should generate valibot schemas from JSON Schemas', () => {
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(definitionsWithAllOfOutput.split('\n'));
   });
+
+  it('should parse JSON Schema with array-of-types (type: ["string", "null"])', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/multi-type-schema.json'
+    );
+    const multiTypeOutput = await getFileContents(
+      'spec/generation/fixtures/output/multi-type-schema.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(multiTypeOutput.split('\n'));
+  });
 });
