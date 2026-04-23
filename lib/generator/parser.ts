@@ -289,6 +289,17 @@ export class SchemaParser {
       if (!required) value = this.wrapAsNonRequired(value);
       return value;
     } else if ('type' in schema) {
+      if (Array.isArray(schema.type)) {
+        const branches = schema.type.map((t) =>
+          this.parseSchema({ ...schema, type: t } as JSONSchema, true, meta)
+        );
+        let value: AnyNode =
+          branches.length === 1
+            ? branches[0]!
+            : schemaNodeUnion({ value: branches });
+        if (!required) value = this.wrapAsNonRequired(value, schema.default);
+        return value;
+      }
       switch (schema.type) {
         case 'string':
           if ('enum' in schema) {
@@ -313,7 +324,7 @@ export class SchemaParser {
           return this.parseNullType(schema, required, meta);
         default:
           throw new Error(
-            `Unsupported type: ${(schema as { type: string }).type}`
+            `Unsupported type: ${(schema as { type: unknown }).type}`
           );
       }
     } else {
