@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-05-02
+
+### Fixed
+
+- **Parse schemas with properties but no explicit type as objects** ([#26](https://github.com/muningis/to-valibot/pull/26)) - OpenAPI base schemas that use `discriminator` typically declare `properties` and `required` without an explicit `type: "object"`. Previously, the parser threw `Error: Unsupported schema` for these inputs. The parser now treats any schema carrying object-only fields (`properties`, `additionalProperties`, `patternProperties`, `propertyNames`, `minProperties`, `maxProperties`) as an object when no other construct (`$ref`, `const`, `allOf`, `type`, `oneOf`, `anyOf`, `not`) matches.
+
 ## [1.6.0] - 2026-04-23
 
 ### Added
