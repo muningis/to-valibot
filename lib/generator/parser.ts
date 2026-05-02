@@ -346,6 +346,19 @@ export class SchemaParser {
         });
         if (!required) value = this.wrapAsNonRequired(value);
         return value;
+      } else if (
+        'properties' in schema ||
+        'additionalProperties' in schema ||
+        'patternProperties' in schema ||
+        'propertyNames' in schema ||
+        'minProperties' in schema ||
+        'maxProperties' in schema
+      ) {
+        return this.parseObjectType(
+          { ...(schema as object), type: 'object' } as JSONSchemaObject,
+          required,
+          meta
+        );
       }
       throw new Error(`Unsupported schema: ${JSON.stringify(schema)}`);
     }

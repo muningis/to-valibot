@@ -50,4 +50,16 @@ describe('should generate valibot schemas from OpenAPI json declaration file', (
     const parsed = parser.generate();
     expect(parsed.split('\n')).toEqual(expectedOutput.split('\n'));
   });
+
+  it('should treat schemas with discriminator and properties but no explicit type as objects', async () => {
+    const schema = await getFileContents(
+      'spec/generation/fixtures/input/openapi-discriminator-base.json'
+    );
+    const expectedOutput = await getFileContents(
+      'spec/generation/fixtures/output/openapi-discriminator-base.ts'
+    );
+    const parser = new ValibotGenerator(schema, 'openapi-json');
+    const parsed = parser.generate();
+    expect(parsed.split('\n')).toEqual(expectedOutput.split('\n'));
+  });
 });
